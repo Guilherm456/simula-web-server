@@ -26,9 +26,7 @@ export class BaseRepository {
   }
 
   async updateBase(baseID: string, newBase: BaseDTO): Promise<Base> {
-    return await this.baseModel
-      .findOneAndUpdate({ _id: baseID }, newBase)
-      .exec();
+    return await this.baseModel.replaceOne({ _id: baseID }, newBase);
   }
 
   async deleteBase(baseID: string): Promise<Base> {

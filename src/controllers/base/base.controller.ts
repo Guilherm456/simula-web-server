@@ -43,16 +43,19 @@ export class BaseController {
     return await this.baseService.getAllBase();
   }
 
+  //Verifica alguma base pelo ID
   @Get('/:baseID')
   async getBaseByID(@Param('baseID') baseID: string): Promise<Base> {
     return await this.baseService.getBaseByID(baseID);
   }
 
+  //Salva a base
   @Post()
   async saveBase(@Body() base: BaseDTO): Promise<Base> {
     return await this.baseService.saveBase(base);
   }
 
+  //Atualiza a base
   @Patch('/:baseID')
   async updateBase(
     @Param('baseID') baseID: string,
@@ -74,28 +77,6 @@ export class BaseController {
     }),
   )
   async uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
-    const csvConverter = require('csvjson-csv2json');
-    if (files === undefined || files.length === 0) {
-      console.log('Inviado arquivos inválidos ou nenhum arquivo enviado');
-      return new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
-    }
-
-    console.log(
-      `Fazendo o upload dos arquivos e convertendo para JSON. Número de arquivos: ${files.length}`,
-    );
-
-    files.forEach((file) => {
-      //Verifica o tamanho do arquivo, caso seja muito grande, será avisado no servidor
-      if (file.size >= 10000000)
-        console.log(
-          `Arquivo grande, pode demorar mais que o normal. Tamanho: ${file.size} bytes aproximadamente | Nome: ${file.originalname}`,
-        );
-      console.log(
-        csvConverter(file.buffer.toString('utf-8'), { parseNumbers: true }),
-      );
-    });
-
-    return 'Arquivos enviados com sucesso!';
-    // console.log(files[1].buffer.toString('utf8'));
+    return await this.baseService.uploadFiles(files);
   }
 }
