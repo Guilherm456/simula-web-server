@@ -45,7 +45,7 @@ class Ambiente {
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  DistribuicaoHumano: any[];
+  DISTRIBUICAOHUMANO: any[];
 }
 
 class Humanos {

@@ -49,10 +49,30 @@ export class BaseController {
     return await this.baseService.getBaseByID(baseID);
   }
 
+  @Get('/structures')
+  getAllStructures(): string[] {
+    return this.baseService.getAllStructures();
+  }
+
   //Salva a base
   @Post()
   async saveBase(@Body() base: BaseDTO): Promise<Base> {
     return await this.baseService.saveBase(base);
+  }
+
+  //Faz o upload de arquivos e converte em JSON para salvar no banco de dados
+  @Post('/files/:structure/:name')
+  @UseInterceptors(
+    FilesInterceptor('files', undefined, {
+      fileFilter: CSVFilter,
+    }),
+  )
+  async uploadFile(
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @Param('structure') structure: string,
+    @Param('name') name: string,
+  ) {
+    return await this.baseService.uploadFiles(files, structure, name);
   }
 
   //Atualiza a base
@@ -67,16 +87,5 @@ export class BaseController {
   @Delete('/:baseID')
   async deleteBase(@Param('baseID') baseID: string): Promise<Base> {
     return await this.baseService.deleteBase(baseID);
-  }
-
-  //Faz o upload de arquivos e converte em JSON para salvar no banco de dados
-  @Post('/files')
-  @UseInterceptors(
-    FilesInterceptor('files', undefined, {
-      fileFilter: CSVFilter,
-    }),
-  )
-  async uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
-    return await this.baseService.uploadFiles(files);
   }
 }

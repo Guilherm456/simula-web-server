@@ -23,4 +23,8 @@ export class BaseDTO {
   @ValidateNested({ each: true })
   @Type(() => InfluenzaStructureDTO)
   parameters: InfluenzaStructureDTO;
+
+  @IsNotEmpty()
+  @IsString()
+  type: 'influenza';
 }

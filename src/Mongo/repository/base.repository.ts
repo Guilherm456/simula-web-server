@@ -22,7 +22,8 @@ export class BaseRepository {
 
   async saveBase(newBase: BaseDTO): Promise<Base> {
     const savedBase = new this.baseModel(newBase);
-    return await savedBase.save();
+    // return await savedBase.save();
+    return savedBase;
   }
 
   async updateBase(baseID: string, newBase: BaseDTO): Promise<Base> {
