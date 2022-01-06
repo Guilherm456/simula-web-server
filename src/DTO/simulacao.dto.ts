@@ -4,7 +4,6 @@ import {
   IsNotEmpty,
   IsString,
 } from 'class-validator';
-import { Base } from 'src/Mongo/Interface/base.interface';
 
 export class SimulacaoDTO {
   @IsNotEmpty()

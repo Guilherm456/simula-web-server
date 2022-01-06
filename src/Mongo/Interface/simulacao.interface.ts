@@ -6,4 +6,5 @@ export interface Simulacao extends Document {
   name: string;
   city: [number];
   base: object;
+  progress: number;
 }

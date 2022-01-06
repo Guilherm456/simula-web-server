@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import { SimulacaoController } from 'src/controllers/simulacao/simulacao.controller';
+import { SimulacaoController } from 'src/modules/simulacao/controller/simulacao.controller';
 import { SimulacaoRepository } from 'src/Mongo/repository/simulacao.repository';
 import { SimulacaoSchema } from 'src/Mongo/Schemas/simulacao.schema';
-import { SimulacaoService } from 'src/services/simulacao/simulacao.service';
+import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 import { BaseModule } from '../base/base.module';
 
 @Module({

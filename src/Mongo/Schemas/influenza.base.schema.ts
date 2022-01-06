@@ -9,6 +9,7 @@ export const InfluenzaSchema = new Schema({
   humanos: {
     INI: [],
     MOV: [],
+    CON: [],
     TRA: [],
   },
   simulacao: {

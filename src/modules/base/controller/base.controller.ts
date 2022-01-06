@@ -15,7 +15,9 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 
 import { BaseDTO } from 'src/DTO/base.DTO';
 import { Base } from 'src/Mongo/Interface/base.interface';
-import { BaseService } from 'src/services/base/base.service';
+import { StructuresInterface } from 'src/Mongo/Interface/structures.interface';
+
+import { BaseService } from 'src/modules/base/service/base.service';
 
 //Filtro para verificar se é arquivos CSV
 const CSVFilter = (
@@ -43,15 +45,15 @@ export class BaseController {
     return await this.baseService.getAllBase();
   }
 
+  @Get('/structures')
+  getAllStructures(): StructuresInterface[] {
+    return this.baseService.getAllStructures();
+  }
+
   //Verifica alguma base pelo ID
   @Get('/:baseID')
   async getBaseByID(@Param('baseID') baseID: string): Promise<Base> {
     return await this.baseService.getBaseByID(baseID);
-  }
-
-  @Get('/structures')
-  getAllStructures(): string[] {
-    return this.baseService.getAllStructures();
   }
 
   //Salva a base
@@ -64,7 +66,7 @@ export class BaseController {
   @Post('/files/:structure/:name')
   @UseInterceptors(
     FilesInterceptor('files', undefined, {
-      fileFilter: CSVFilter,
+      // fileFilter: CSVFilter,
     }),
   )
   async uploadFile(

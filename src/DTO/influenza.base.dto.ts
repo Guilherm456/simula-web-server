@@ -20,6 +20,7 @@ AMB
 HUMANO
   INI
   MOV
+  CON
   TRA
 
 SIMULACAO
@@ -62,6 +63,13 @@ class Humanos {
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
   MOV: any[];
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMinSize(1)
+  @IsNotEmptyObject({}, { each: true })
+  @ValidateNested({ each: true })
+  CON: any[];
 
   @IsArray()
   @ArrayNotEmpty()

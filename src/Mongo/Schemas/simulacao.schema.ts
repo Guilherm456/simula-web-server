@@ -5,4 +5,5 @@ export const SimulacaoSchema = new Schema({
   name: String,
   city: [Number],
   base: BaseSchema,
+  progress: Number,
 });

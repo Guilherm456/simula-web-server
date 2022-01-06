@@ -4,9 +4,11 @@ import {
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
-import { validate, validateOrReject } from 'class-validator';
+
 import { BaseDTO } from 'src/DTO/base.DTO';
+import { InfluenzaStructure } from 'src/modules/base/structures.object';
 import { Base } from 'src/Mongo/Interface/base.interface';
+import { StructuresInterface } from 'src/Mongo/Interface/structures.interface';
 
 import { BaseRepository } from 'src/Mongo/repository/base.repository';
 
@@ -37,13 +39,13 @@ export class BaseService {
       console.log('Inviado arquivos inválidos ou nenhum arquivo enviado');
       return new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
     }
+    structure = structure.toLowerCase();
 
     console.log(
       `Fazendo o upload dos arquivos e convertendo para JSON. Número de arquivos: ${files.length}`,
     );
 
     //Isso permite com que o sistema possa adicionar novos tipos de simulação
-
     const structureFinal = new BaseDTO();
     structureFinal.name = name;
     switch (structure) {
@@ -51,20 +53,21 @@ export class BaseService {
         //Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
         structureFinal.parameters = {
           ambiente: {
-            // AMB: this.convertJSON(files[0]),
-            AMB: [],
+            AMB: this.convertJSON(files[0]),
             CONV: this.convertJSON(files[1]),
             DISTRIBUICAOHUMANO: this.convertJSON(files[2]),
           },
           humano: {
             INI: this.convertJSON(files[3]),
             MOV: this.convertJSON(files[4]),
-            TRA: this.convertJSON(files[5]),
+            CON: this.convertJSON(files[5]),
+            TRA: this.convertJSON(files[6]),
           },
           simulacao: {
-            SIM: this.convertJSON(files[6]),
+            SIM: this.convertJSON(files[7]),
           },
         };
+        console.log(structureFinal);
         return await this.saveBase(structureFinal);
         break;
 
@@ -77,8 +80,8 @@ export class BaseService {
     return await this.baseRepository.getAllBase();
   }
 
-  getAllStructures(): string[] {
-    return [];
+  getAllStructures(): StructuresInterface[] {
+    return [InfluenzaStructure];
   }
 
   async getBaseByID(baseID: string): Promise<Base> {
