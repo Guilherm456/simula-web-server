@@ -16,7 +16,7 @@ import { BaseRepository } from 'src/Mongo/repository/base.repository';
 export class BaseService {
   constructor(private readonly baseRepository: BaseRepository) {}
 
-  convertJSON(file: Express.Multer.File) {
+  async convertJSON(file: Express.Multer.File) {
     const csvConverter = require('csvjson-csv2json');
 
     //Verifica o tamanho do arquivo, caso seja muito grande, será avisado no servidor
@@ -50,24 +50,30 @@ export class BaseService {
     structureFinal.name = name;
     switch (structure) {
       case 'influenza':
+        if (files.length < 8)
+          return new HttpException(
+            'Número de arquivos enviados é menor que o necessário para esta simulação',
+            HttpStatus.BAD_REQUEST,
+          );
+
         //Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
         structureFinal.parameters = {
           ambiente: {
-            AMB: this.convertJSON(files[0]),
-            CONV: this.convertJSON(files[1]),
-            DISTRIBUICAOHUMANO: this.convertJSON(files[2]),
+            AMB: await this.convertJSON(files[0]),
+            CON: await this.convertJSON(files[1]),
+            DistribuicaoHumano: await this.convertJSON(files[2]),
           },
-          humano: {
-            INI: this.convertJSON(files[3]),
-            MOV: this.convertJSON(files[4]),
-            CON: this.convertJSON(files[5]),
-            TRA: this.convertJSON(files[6]),
+          humanos: {
+            INI: await this.convertJSON(files[3]),
+            MOV: await this.convertJSON(files[4]),
+            CON: await this.convertJSON(files[5]),
+            TRA: await this.convertJSON(files[6]),
           },
           simulacao: {
-            SIM: this.convertJSON(files[7]),
+            SIM: await this.convertJSON(files[7]),
           },
         };
-        console.log(structureFinal);
+        structureFinal.type = 'influenza';
         return await this.saveBase(structureFinal);
         break;
 

@@ -39,14 +39,14 @@ class Ambiente {
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  CONV: any[];
+  CON: any[];
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  DISTRIBUICAOHUMANO: any[];
+  DistribuicaoHumano: any[];
 }
 
 class Humanos {
@@ -97,7 +97,7 @@ export class InfluenzaStructureDTO {
   @IsNotEmptyObject()
   @Type(() => Humanos)
   @ValidateNested({ each: true })
-  humano: Humanos;
+  humanos: Humanos;
 
   @IsNotEmptyObject()
   @Type(() => Simulacao)

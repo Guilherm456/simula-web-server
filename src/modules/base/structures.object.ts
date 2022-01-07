@@ -5,13 +5,13 @@ export const InfluenzaStructure: StructuresInterface = {
   type_parameters: {
     ambiente: {
       AMB: [],
-      CONV: [],
+      CON: [],
       DISTRIBUICAOHUMANO: [],
     },
     humano: {
       INI: [],
       MOV: [],
-      CONV: [],
+      CON: [],
       TRA: [],
     },
     simulacao: {
