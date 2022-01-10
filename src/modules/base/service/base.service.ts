@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 import { BaseDTO } from 'src/DTO/base.DTO';
 import { InfluenzaStructure } from 'src/modules/base/structures.object';
@@ -16,7 +11,7 @@ import { BaseRepository } from 'src/Mongo/repository/base.repository';
 export class BaseService {
   constructor(private readonly baseRepository: BaseRepository) {}
 
-  async convertJSON(file: Express.Multer.File) {
+  convertJSON(file: Express.Multer.File) {
     const csvConverter = require('csvjson-csv2json');
 
     //Verifica o tamanho do arquivo, caso seja muito grande, será avisado no servidor
@@ -59,18 +54,18 @@ export class BaseService {
         //Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
         structureFinal.parameters = {
           ambiente: {
-            AMB: await this.convertJSON(files[0]),
-            CON: await this.convertJSON(files[1]),
-            DistribuicaoHumano: await this.convertJSON(files[2]),
+            AMB: this.convertJSON(files[0]),
+            CON: this.convertJSON(files[1]),
+            DistribuicaoHumano: this.convertJSON(files[2]),
           },
           humanos: {
-            INI: await this.convertJSON(files[3]),
-            MOV: await this.convertJSON(files[4]),
-            CON: await this.convertJSON(files[5]),
-            TRA: await this.convertJSON(files[6]),
+            INI: this.convertJSON(files[3]),
+            MOV: this.convertJSON(files[4]),
+            CON: this.convertJSON(files[5]),
+            TRA: this.convertJSON(files[6]),
           },
           simulacao: {
-            SIM: await this.convertJSON(files[7]),
+            SIM: this.convertJSON(files[7]),
           },
         };
         structureFinal.type = 'influenza';
@@ -78,7 +73,10 @@ export class BaseService {
         break;
 
       default:
-        return new BadRequestException('Estrutura não encontrada');
+        return new HttpException(
+          'Estrutura não encontrada',
+          HttpStatus.BAD_REQUEST,
+        );
     }
   }
 
@@ -94,10 +92,16 @@ export class BaseService {
     try {
       const base = await this.baseRepository.getBaseByID(baseID);
       if (!base)
-        throw new BadRequestException('Nenhuma base encontrada com esse ID');
+        throw new HttpException(
+          'Nenhuma base encontrada com esse ID',
+          HttpStatus.NOT_FOUND,
+        );
       return base;
     } catch (e) {
-      throw new BadRequestException('Nenhuma base encontrada com esse ID');
+      throw new HttpException(
+        'Nenhuma base encontrada com esse ID',
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 
@@ -109,11 +113,18 @@ export class BaseService {
     const base = await this.baseRepository.getBaseByID(baseID);
 
     if (!baseID)
-      throw new BadRequestException('Nenhuma base encontrada com esse ID');
+      throw new HttpException(
+        'Nenhuma base encontrada com esse ID',
+        HttpStatus.NOT_FOUND,
+      );
 
     const updatedBase = await this.baseRepository.updateBase(baseID, newBase);
     if (updatedBase) return this.baseRepository.getBaseByID(baseID);
-    else throw new BadRequestException('Erro ao atualizar base');
+    else
+      throw new HttpException(
+        'Erro ao atualizar base',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
   }
 
   async deleteBase(baseID: string): Promise<Base> {
@@ -122,7 +133,10 @@ export class BaseService {
       console.log('Base deletada: ', baseDeleted.name);
       return baseDeleted;
     } catch (e) {
-      throw new BadRequestException('Nenhuma base encontrada com esse ID');
+      throw new HttpException(
+        'Nenhuma base encontrada com esse ID',
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 }

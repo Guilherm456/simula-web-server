@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
@@ -19,7 +19,7 @@ export class SimulacaoService {
     const base = await this.baseService.getBaseByID(baseID);
     if (base) {
       return await this.simulacaoRepository.saveSimulacao(simulacao, base);
-    } else throw new BadRequestException('Base não encontrada');
+    } else throw new HttpException('Base não encontrada', HttpStatus.NOT_FOUND);
   }
 
   async getAllSimulacoes(): Promise<Simulacao[]> {
@@ -28,7 +28,8 @@ export class SimulacaoService {
 
   async getSimulacaoByID(ID: string): Promise<Simulacao> {
     const simulacao = await this.simulacaoRepository.getSimulacaoByID(ID);
-    if (!simulacao) throw new BadRequestException('Simulação não encontrada');
+    if (!simulacao)
+      throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
     else return simulacao;
   }
 
@@ -49,7 +50,7 @@ export class SimulacaoService {
         });
         break;
       default:
-        throw new BadRequestException('Status inválido');
+        throw new HttpException('Status inválido', HttpStatus.NOT_ACCEPTABLE);
     }
   }
 
@@ -61,7 +62,7 @@ export class SimulacaoService {
       simulacaoID,
     );
     if (!simulacaoOld)
-      throw new BadRequestException('Simulação não encontrada');
+      throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
 
     return await this.simulacaoRepository.updateSimulacao(
       simulacaoID,
@@ -77,7 +78,10 @@ export class SimulacaoService {
       console.log('Base deletada: ', simulacaoDeleted.name);
       return simulacaoDeleted;
     } catch (e) {
-      throw new BadRequestException('Nenhuma base encontrada com esse ID');
+      throw new HttpException(
+        'Nenhuma base encontrada com esse ID',
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 }
