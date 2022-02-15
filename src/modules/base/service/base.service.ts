@@ -119,12 +119,16 @@ export class BaseService {
       );
 
     const updatedBase = await this.baseRepository.updateBase(baseID, newBase);
-    if (updatedBase) return this.baseRepository.getBaseByID(baseID);
-    else
+    if (updatedBase) {
+      console.log('Base atualizada: ', updatedBase.name);
+      return this.baseRepository.getBaseByID(baseID);
+    } else {
+      console.log('Erro ao atualizar a base!');
       throw new HttpException(
         'Erro ao atualizar base',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
   }
 
   async deleteBase(baseID: string): Promise<Base> {

@@ -16,7 +16,7 @@ import { InfluenzaStructureDTO } from './influenza.base.dto';
 export class BaseDTO {
   @IsNotEmpty()
   @IsString()
-  @Length(2, 50)
+  @Length(3, 50)
   name: string;
 
   @IsNotEmptyObject({}, { each: true })
