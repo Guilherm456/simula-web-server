@@ -37,18 +37,18 @@ export class SimulacaoService {
     switch (status) {
       case 'new':
         return await this.simulacaoRepository.getSimulacoesByStatus({ $eq: 0 });
-        
+
       case 'running':
         return await this.simulacaoRepository.getSimulacoesByStatus({
           $gte: 1,
           $lt: 100,
         });
-        
+
       case 'finished':
         return await this.simulacaoRepository.getSimulacoesByStatus({
           $gte: 100,
         });
-        
+
       default:
         throw new HttpException('Status inválido', HttpStatus.NOT_ACCEPTABLE);
     }

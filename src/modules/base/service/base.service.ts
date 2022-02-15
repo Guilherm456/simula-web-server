@@ -70,7 +70,6 @@ export class BaseService {
         };
         structureFinal.type = 'influenza';
         return await this.saveBase(structureFinal);
-        
 
       default:
         return new HttpException(
