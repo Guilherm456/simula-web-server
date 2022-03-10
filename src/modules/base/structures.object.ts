@@ -3,18 +3,18 @@ import { StructuresInterface } from 'src/Mongo/Interface/structures.interface';
 export const InfluenzaStructure: StructuresInterface = {
   name: 'Influenza',
   type_parameters: {
-    ambiente: {
+    Ambiente: {
       AMB: [],
       CON: [],
       DISTRIBUICAOHUMANO: [],
     },
-    humano: {
+    Humano: {
       INI: [],
       MOV: [],
       CON: [],
       TRA: [],
     },
-    simulacao: {
+    Simulacao: {
       SIM: [],
     },
   },

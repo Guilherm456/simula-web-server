@@ -4,6 +4,8 @@ import * as mongoose from 'mongoose';
 export interface Base extends Document {
   _id: mongoose.Schema.Types.ObjectId;
   name: string;
-  parameters: object;
+  parameters: {
+    [key: string]: any;
+  };
   type: 'influenza';
 }

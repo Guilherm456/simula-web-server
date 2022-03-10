@@ -1,18 +1,18 @@
 import { Schema } from 'mongoose';
 
 export const InfluenzaSchema = new Schema({
-  ambiente: {
+  Ambiente: {
     AMB: [],
     CON: [],
     DistribuicaoHumano: [],
   },
-  humanos: {
+  Humanos: {
     INI: [],
     MOV: [],
     CON: [],
     TRA: [],
   },
-  simulacao: {
+  Simulacao: {
     SIM: [],
   },
 });

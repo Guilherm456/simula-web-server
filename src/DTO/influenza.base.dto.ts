@@ -2,11 +2,7 @@ import {
   ArrayMinSize,
   ArrayNotEmpty,
   IsArray,
-  IsDefined,
-  IsNotEmpty,
   IsNotEmptyObject,
-  IsObject,
-  IsString,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -32,21 +28,21 @@ class Ambiente {
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  AMB: any[];
+  AMB: any[] | String;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  CON: any[];
+  CON: any[] | String;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  DistribuicaoHumano: any[];
+  DistribuicaoHumano: any[] | String;
 }
 
 class Humanos {
@@ -55,28 +51,28 @@ class Humanos {
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  INI: any[];
+  INI: any[] | String;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  MOV: any[];
+  MOV: any[] | String;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  CON: any[];
+  CON: any[] | String;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  TRA: any[];
+  TRA: any[] | String;
 }
 
 class Simulacao {
@@ -85,22 +81,22 @@ class Simulacao {
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  SIM: any[];
+  SIM: any[] | String;
 }
 
 export class InfluenzaStructureDTO {
   @IsNotEmptyObject()
   @Type(() => Ambiente)
   @ValidateNested({ each: true })
-  ambiente: Ambiente;
+  Ambiente: Ambiente;
 
   @IsNotEmptyObject()
   @Type(() => Humanos)
   @ValidateNested({ each: true })
-  humanos: Humanos;
+  Humanos: Humanos;
 
   @IsNotEmptyObject()
   @Type(() => Simulacao)
   @ValidateNested({ each: true })
-  simulacao: Simulacao;
+  Simulacao: Simulacao;
 }

@@ -6,6 +6,7 @@ import { SimulacaoRepository } from 'src/Mongo/repository/simulacao.repository';
 import { SimulacaoSchema } from 'src/Mongo/Schemas/simulacao.schema';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 import { BaseModule } from '../base/base.module';
+import { BaseService } from '../base/service/base.service';
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { BaseModule } from '../base/base.module';
     BaseModule,
   ],
   controllers: [SimulacaoController],
-  providers: [SimulacaoService, SimulacaoRepository],
+  providers: [SimulacaoService, SimulacaoRepository, BaseModule],
 })
 export class SimulacaoModule {}
