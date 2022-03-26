@@ -12,14 +12,16 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-
 import { BaseDTO } from 'src/DTO/base.DTO';
-import { Base } from 'src/Mongo/Interface/base.interface';
-import { StructuresInterface } from 'src/Mongo/Interface/structures.interface';
-
 import { BaseService } from 'src/modules/base/service/base.service';
+import { Base } from 'src/Mongo/Interface/base.interface';
+import {
+  StatesInterface,
+  StructuresInterface,
+} from 'src/Mongo/Interface/structures.interface';
 
 //Filtro para verificar se é arquivos CSV
+//DESATIVADO TEMPORARIAMENTE
 const CSVFilter = (
   req: Express.Request,
   file: Express.Multer.File,
@@ -28,7 +30,10 @@ const CSVFilter = (
   //Verifica se é arquivos CSV, caso não seja, aponta o erro ao usuário
   if (file.mimetype !== 'text/csv')
     return callback(
-      new HttpException('Only CSV files are allowed!', HttpStatus.BAD_REQUEST),
+      new HttpException(
+        'Apenas arquivos CSV são permitidos!',
+        HttpStatus.BAD_REQUEST,
+      ),
       false,
     );
 
@@ -45,9 +50,26 @@ export class BaseController {
     return await this.baseService.getAllBase();
   }
 
+  //Retorna todas as estruturas
   @Get('/structures')
   getAllStructures(): StructuresInterface[] {
     return this.baseService.getAllStructures();
+  }
+
+  //Responsável por buscar uma estrutura pelo nome da mesma
+  @Get('/structures/:nameStructure')
+  getStructureByName(
+    @Param('nameStructure') nameStructure: string,
+  ): StructuresInterface {
+    return this.baseService.getStructureByName(nameStructure);
+  }
+
+  //Repassa os estados que os agentes podem ter em uma determinada estrutura
+  @Get('/structures/:nameStructure/states')
+  getStatesByStructure(
+    @Param('nameStructure') nameStructure: string,
+  ): StatesInterface {
+    return this.baseService.getStatesByStructure(nameStructure);
   }
 
   //Verifica alguma base pelo ID
@@ -69,6 +91,8 @@ export class BaseController {
       // fileFilter: CSVFilter,
     }),
   )
+
+  //Faz o upload de arquivos e converte em JSON para salvar no banco de dados
   async uploadFile(
     @UploadedFiles() files: Array<Express.Multer.File>,
     @Param('structure') structure: string,
@@ -86,6 +110,7 @@ export class BaseController {
     return await this.baseService.updateBase(baseID, base);
   }
 
+  //Deleta a base
   @Delete('/:baseID')
   async deleteBase(@Param('baseID') baseID: string): Promise<Base> {
     return await this.baseService.deleteBase(baseID);
