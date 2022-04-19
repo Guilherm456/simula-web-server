@@ -1,10 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-
 import { BaseDTO } from 'src/DTO/base.DTO';
 import { InfluenzaStructure } from 'src/modules/base/structures.object';
 import { Base } from 'src/Mongo/Interface/base.interface';
-import { StructuresInterface } from 'src/Mongo/Interface/structures.interface';
-
+import {
+  StatesInterface,
+  StructuresInterface,
+} from 'src/Mongo/Interface/structures.interface';
 import { BaseRepository } from 'src/Mongo/repository/base.repository';
 
 @Injectable()
@@ -87,13 +88,13 @@ export class BaseService {
     return [InfluenzaStructure];
   }
 
-  getStructureByName(structureName: string): StructuresInterface | [] {
+  getStructureByName(structureName: string): StructuresInterface {
     const structures = this.getAllStructures();
     const structure = structures.find(
       (elemm) => elemm.name.toLowerCase() === structureName.toLowerCase(),
     );
     if (structure == undefined) {
-      return [];
+      return null;
     } else return structure;
   }
 
@@ -110,6 +111,12 @@ export class BaseService {
     if (structure === undefined)
       throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
     else return structure;
+  }
+
+  getStatesByStructure(name: string): StatesInterface {
+    const structure = this.getStructureByName(name);
+    if (!structure) return [];
+    return structure.states;
   }
 
   async getBaseByID(baseID: string): Promise<Base> {
