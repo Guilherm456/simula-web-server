@@ -50,6 +50,11 @@ export class BaseController {
     return this.baseService.getAllStructures();
   }
 
+  @Get('/structures/:baseID')
+  async getStructureFromBase(baseID: string): Promise<StructuresInterface> {
+    return this.baseService.getStructureByID(baseID);
+  }
+
   //Verifica alguma base pelo ID
   @Get('/:baseID')
   async getBaseByID(@Param('baseID') baseID: string): Promise<Base> {

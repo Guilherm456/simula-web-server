@@ -51,26 +51,25 @@ export class BaseService {
             HttpStatus.BAD_REQUEST,
           );
 
-        //Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
+        // Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
         structureFinal.parameters = {
-          ambiente: {
+          Ambiente: {
             AMB: this.convertJSON(files[0]),
             CON: this.convertJSON(files[1]),
             DistribuicaoHumano: this.convertJSON(files[2]),
           },
-          humanos: {
+          Humanos: {
             INI: this.convertJSON(files[3]),
             MOV: this.convertJSON(files[4]),
             CON: this.convertJSON(files[5]),
             TRA: this.convertJSON(files[6]),
           },
-          simulacao: {
+          Simulacao: {
             SIM: this.convertJSON(files[7]),
           },
         };
         structureFinal.type = 'influenza';
         return await this.saveBase(structureFinal);
-        break;
 
       default:
         return new HttpException(
@@ -86,6 +85,31 @@ export class BaseService {
 
   getAllStructures(): StructuresInterface[] {
     return [InfluenzaStructure];
+  }
+
+  getStructureByName(structureName: string): StructuresInterface | [] {
+    const structures = this.getAllStructures();
+    const structure = structures.find(
+      (elemm) => elemm.name.toLowerCase() === structureName.toLowerCase(),
+    );
+    if (structure == undefined) {
+      return [];
+    } else return structure;
+  }
+
+  async getStructureByID(baseID: string): Promise<StructuresInterface> {
+    const base = await this.baseRepository.getBaseByID(baseID);
+    if (!base)
+      throw new HttpException(
+        'Nenhuma base encontrada com esse ID',
+        HttpStatus.NOT_FOUND,
+      );
+    const structure = this.getAllStructures().find(
+      (elem) => elem.name.toLowerCase() === base.type.toLowerCase(),
+    );
+    if (structure === undefined)
+      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
+    else return structure;
   }
 
   async getBaseByID(baseID: string): Promise<Base> {
