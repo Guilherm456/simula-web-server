@@ -11,6 +11,7 @@ import {
 import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
+import { BaseService } from 'src/modules/base/service/base.service';
 
 @Controller('simulacao')
 export class SimulacaoController {
@@ -31,6 +32,11 @@ export class SimulacaoController {
     @Param('status') status: string,
   ): Promise<Simulacao[]> {
     return await this.simulacaoService.getSimulacoesByStatus(status);
+  }
+
+  @Post('/:simulacaoID/execute')
+  async executeSimulacao(@Param('simulacaoID') simulacaoID: string) {
+    return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
   }
 
   @Post('/:baseID')
