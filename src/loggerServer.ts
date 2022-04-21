@@ -27,7 +27,6 @@ export class LoggerServer extends ConsoleLogger {
     const size = statSync(file).size;
     //Se o arquivo for maior que 50MB, apaga o arquivo e recomeça
     if (size >= 50000000) {
-      console.log('deletando arquivo');
       unlinkSync(file);
     }
     const date = new Date().toLocaleString();

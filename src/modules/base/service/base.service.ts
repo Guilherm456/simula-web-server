@@ -1,4 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { LoggerServer } from 'src/loggerServer';
+
 import { BaseDTO } from 'src/DTO/base.DTO';
 import { InfluenzaStructure } from 'src/modules/base/structures.object';
 import { Base } from 'src/Mongo/Interface/base.interface';
@@ -10,14 +12,17 @@ import { BaseRepository } from 'src/Mongo/repository/base.repository';
 
 @Injectable()
 export class BaseService {
-  constructor(private readonly baseRepository: BaseRepository) {}
+  constructor(
+    private readonly baseRepository: BaseRepository,
+    private readonly logger: LoggerServer,
+  ) {}
 
   convertJSON(file: Express.Multer.File) {
     const csvConverter = require('csvjson-csv2json');
 
     //Verifica o tamanho do arquivo, caso seja muito grande, será avisado no servidor
     if (file.size >= 10000000)
-      console.log(
+      this.logger.warn(
         `Arquivo grande, pode demorar mais que o normal. Tamanho: ${file.size} bytes aproximadamente | Nome: ${file.originalname}`,
       );
 
@@ -32,12 +37,12 @@ export class BaseService {
     name: string,
   ) {
     if (files === undefined || files.length === 0) {
-      console.log('Inviado arquivos inválidos ou nenhum arquivo enviado');
+      this.logger.error('Inviado arquivos inválidos ou nenhum arquivo enviado');
       return new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
     }
     structure = structure.toLowerCase();
 
-    console.log(
+    this.logger.log(
       `Fazendo o upload dos arquivos e convertendo para JSON. Número de arquivos: ${files.length}`,
     );
 
@@ -151,10 +156,10 @@ export class BaseService {
 
     const updatedBase = await this.baseRepository.updateBase(baseID, newBase);
     if (updatedBase) {
-      console.log('Base atualizada: ', updatedBase.name);
+      this.logger.warn(`Base atualizada: ${updatedBase.name}`);
       return this.baseRepository.getBaseByID(baseID);
     } else {
-      console.log('Erro ao atualizar a base!');
+      this.logger.error('Erro ao atualizar a base!');
       throw new HttpException(
         'Erro ao atualizar base',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -165,7 +170,7 @@ export class BaseService {
   async deleteBase(baseID: string): Promise<Base> {
     try {
       const baseDeleted = await this.baseRepository.deleteBase(baseID);
-      console.log('Base deletada: ', baseDeleted.name);
+      this.logger.warn(`Base deletada: ${baseDeleted.name}`);
       return baseDeleted;
     } catch (e) {
       throw new HttpException(

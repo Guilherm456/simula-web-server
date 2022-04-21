@@ -7,6 +7,8 @@ import { BaseService } from '../../base/service/base.service';
 
 import { existsSync, writeFileSync, mkdirSync, closeSync } from 'fs';
 
+import { LoggerServer } from 'src/loggerServer';
+
 const queuesExecutions = [];
 
 const path = require('path');
@@ -15,6 +17,7 @@ export class SimulacaoService {
   constructor(
     private readonly simulacaoRepository: SimulacaoRepository,
     private readonly baseService: BaseService,
+    private readonly logger: LoggerServer,
   ) {}
 
   async saveSimulacao(
@@ -70,8 +73,6 @@ export class SimulacaoService {
   async executeSimulacao(simulacaoID: string) {
     const simulacao = await this.getSimulacaoByID(simulacaoID);
 
-    console.log(simulacao);
-
     //Vai buscar a estrutura da base
     const structure = await this.baseService.getStructureByID(
       simulacao.base._id.toString(),
@@ -99,7 +100,6 @@ export class SimulacaoService {
           const names_param = Object.keys(structure.type_parameters[i]);
           const atualDir = path.join(folderExec, i);
           mkdirSync(atualDir, { recursive: true });
-          console.log(simulacao.base.parameters[i]);
 
           for (let j of names_param) {
             //função temporária para testar
@@ -116,8 +116,8 @@ export class SimulacaoService {
 
         return true;
       } catch (e) {
-        console.log(e);
-        console.log('Algum erro ocorreu ao executar uma simulação');
+        this.logger.error('Algum erro ocorreu ao executar uma simulação');
+        this.logger.error(e);
         throw new HttpException(
           'Erro ao criar pasta da simulação',
           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -147,9 +147,10 @@ export class SimulacaoService {
       const simulacaoDeleted = await this.simulacaoRepository.deleteSimulacao(
         simulacaoID,
       );
-      console.log('Base deletada: ', simulacaoDeleted.name);
+      this.logger.warn(`Base deletada: ${simulacaoDeleted.name}`);
       return simulacaoDeleted;
     } catch (e) {
+      this.logger.error('Solicitação de exclusão de base não existente');
       throw new HttpException(
         'Nenhuma base encontrada com esse ID',
         HttpStatus.NOT_FOUND,
