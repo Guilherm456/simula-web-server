@@ -1,5 +1,5 @@
 import { ConsoleLogger } from '@nestjs/common';
-import { appendFileSync, statSync, unlinkSync } from 'fs';
+import { appendFileSync, existsSync, statSync, unlinkSync } from 'fs';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'log';
 
@@ -24,10 +24,12 @@ export class LoggerServer extends ConsoleLogger {
   //Função para salvar logs no arquivo
   saveInFile(message: string, type: LogLevel) {
     const file = `${__dirname}/log.txt`;
-    const size = statSync(file).size;
-    //Se o arquivo for maior que 50MB, apaga o arquivo e recomeça
-    if (size >= 50000000) {
-      unlinkSync(file);
+    if (existsSync(file)) {
+      const size = statSync(file).size;
+      //Se o arquivo for maior que 50MB, apaga o arquivo e recomeça
+      if (size >= 50000000) {
+        unlinkSync(file);
+      }
     }
     const date = new Date().toLocaleString();
     //Log no arquivo vai parecer como: data - [tipo] [mensagem]
