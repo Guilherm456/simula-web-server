@@ -124,6 +124,14 @@ export class BaseService {
     return structure.states;
   }
 
+  async getStatesByBase(baseID: string): Promise<StatesInterface> {
+    const structure = await this.getStructureByID(baseID);
+    if (!structure) {
+      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
+    }
+    return this.getStatesByStructure(structure.name);
+  }
+
   async getBaseByID(baseID: string): Promise<Base> {
     try {
       const base = await this.baseRepository.getBaseByID(baseID);

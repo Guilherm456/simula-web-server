@@ -56,7 +56,7 @@ export class BaseController {
     return this.baseService.getAllStructures();
   }
 
-  @Get('/structures/:baseID')
+  @Get('/:baseID/structures')
   async getStructureFromBase(baseID: string): Promise<StructuresInterface> {
     return this.baseService.getStructureByID(baseID);
   }
@@ -67,6 +67,13 @@ export class BaseController {
     @Param('nameStructure') nameStructure: string,
   ): StructuresInterface | [] {
     return this.baseService.getStructureByName(nameStructure);
+  }
+
+  @Get('/:baseID/states')
+  async getStatesByBase(
+    @Param('baseID') baseID: string,
+  ): Promise<StatesInterface> {
+    return this.baseService.getStatesByBase(baseID);
   }
 
   //Repassa os estados que os agentes podem ter em uma determinada estrutura
