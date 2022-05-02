@@ -38,6 +38,12 @@ export class SimulacaoRepository {
     return await this.simulacaoModel.findById(ID, { __v: false }).exec();
   }
 
+  async getSimulacoesByBaseID(baseID: string): Promise<Simulacao[]> {
+    return await this.simulacaoModel
+      .find({ 'base._id': baseID }, { __v: false })
+      .exec();
+  }
+
   async updateSimulacao(
     simulacaoID: string,
     newSimulacao: SimulacaoDTO,
