@@ -34,6 +34,13 @@ export class SimulacaoController {
     return await this.simulacaoService.getSimulacoesByStatus(status);
   }
 
+  @Get('/base/:baseID')
+  async getSimulacoesByBaseID(
+    @Param('baseID') baseID: string,
+  ): Promise<Simulacao[]> {
+    return await this.simulacaoService.getSimulacoesByBaseID(baseID);
+  }
+
   @Post('/:simulacaoID/execute')
   async executeSimulacao(@Param('simulacaoID') simulacaoID: string) {
     return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
