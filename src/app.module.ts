@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { BaseModule } from './modules/base/base.module';
 import { SimulacaoModule } from './modules/simulacao/simulacao.module';
+import { AppServerModule } from './modules/app-server/app-server.module';
 
 @Module({
   imports: [
@@ -11,9 +12,9 @@ import { SimulacaoModule } from './modules/simulacao/simulacao.module';
     MongooseModule.forRoot(
       `mongodb+srv://${process.env.USER_MONGO}:${process.env.USER_MONGO_PASSWORD}@cluster0.v27ia.mongodb.net/simulaWEB?retryWrites=true&w=majority`,
     ),
-
     BaseModule,
     SimulacaoModule,
+    AppServerModule,
   ],
   controllers: [],
   providers: [],
