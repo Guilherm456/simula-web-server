@@ -126,6 +126,10 @@ export class SimulacaoService {
     }
   }
 
+  async getSimulacoesByBaseID(baseID: string): Promise<Simulacao[]> {
+    return this.simulacaoRepository.getSimulacoesByBaseID(baseID);
+  }
+
   async updateSimulacao(
     simulacaoID: string,
     newSimulacao: SimulacaoDTO,
