@@ -12,7 +12,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { BaseDTO } from 'src/DTO/base.DTO';
+
+import { BaseDTO } from 'src/DTO/base.dto';
 import { BaseService } from 'src/modules/base/service/base.service';
 import { Base } from 'src/Mongo/Interface/base.interface';
 import {

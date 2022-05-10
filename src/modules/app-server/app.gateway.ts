@@ -20,7 +20,7 @@ export class AppGateway implements OnGatewayInit {
   @WebSocketServer()
   private server: Server;
   afterInit() {
-    this.file = __dirname + '../../../log.txt';
+    this.file = __dirname + '/../../log.txt';
 
     //Vai verificar se existe o arquivo
     //Se não existir, cria um

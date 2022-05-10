@@ -1,7 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { LoggerServer } from 'src/loggerServer';
 
-import { BaseDTO } from 'src/DTO/base.DTO';
+import { BaseDTO } from 'src/DTO/base.dto';
+
 import { InfluenzaStructure } from 'src/modules/base/structures.object';
 import { Base } from 'src/Mongo/Interface/base.interface';
 import {
