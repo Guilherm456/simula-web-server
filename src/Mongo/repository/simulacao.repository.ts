@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 
 import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
 import { Base } from '../Interface/base.interface';
-import { Simulacao } from '../Interface/simulacao.interface';
+import { DatasProps, Simulacao } from '../Interface/simulacao.interface';
 
 @Injectable()
 export class SimulacaoRepository {
@@ -41,6 +41,21 @@ export class SimulacaoRepository {
   async getSimulacoesByBaseID(baseID: string): Promise<Simulacao[]> {
     return await this.simulacaoModel
       .find({ 'base._id': baseID }, { __v: false })
+      .exec();
+  }
+
+  async executeSimulacao(
+    simulacaoID: string,
+    data: DatasProps[],
+  ): Promise<Simulacao> {
+    return await this.simulacaoModel
+      .findOneAndUpdate(
+        { _id: simulacaoID },
+        {
+          result: data,
+          progress: 100,
+        },
+      )
       .exec();
   }
 

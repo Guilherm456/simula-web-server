@@ -1,13 +1,17 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
-import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
+import {
+  DatasProps,
+  SearchsProps,
+  Simulacao,
+} from 'src/Mongo/Interface/simulacao.interface';
 import { SimulacaoRepository } from 'src/Mongo/repository/simulacao.repository';
-import { BaseService } from '../../base/service/base.service';
-
-import { existsSync, writeFileSync, mkdirSync, closeSync } from 'fs';
+import { BaseService } from 'src/modules/base/service/base.service';
 
 import { LoggerServer } from 'src/loggerServer';
+
+import { writeFileSync, mkdirSync } from 'fs';
 
 const queuesExecutions = [];
 
@@ -60,14 +64,58 @@ export class SimulacaoService {
   }
 
   async addExecuteSimulacao(simulacaoID: string) {
-    if (!queuesExecutions.includes(simulacaoID)) {
-      queuesExecutions.push(simulacaoID);
-      if (queuesExecutions.length == 1) {
-        return await this.executeSimulacao(simulacaoID);
+    this.logger.warn('Adicionando nova simulação na fila de execução');
+    const simulacao = await this.getSimulacaoByID(simulacaoID);
+    if (!simulacao) return;
+    this.fakeData(simulacao);
+    // if (!queuesExecutions.includes(simulacaoID)) {
+    //   queuesExecutions.push(simulacaoID);
+    //   if (queuesExecutions.length == 1) {
+    //     return await this.executeSimulacao(simulacaoID);
+    //   }
+    //   //Vai passar o tanto de simulações que estão a ser executadas
+    //   return queuesExecutions.length;
+    // } else return 'Simulação já está na fila de execução';
+  }
+
+  async fakeData(simulacao: Simulacao) {
+    const data: DatasProps[] = [];
+    const fakeCiclos = Math.random() * 150;
+
+    const agensNum = 190;
+    const estados = this.baseService.getStatesByBase(
+      simulacao.base._id.toString(),
+    );
+    for (let j = 0; j < fakeCiclos; j++) {
+      const tempData = [];
+      for (let i = 0; i < 190; i++) {
+        let stateN = Math.floor(Math.random() * (await estados).length);
+        let isNegativeX = Math.floor(Math.random() * 2);
+        let isNegativeY = Math.floor(Math.random() * 2);
+
+        const max = 0.07;
+        tempData.push({
+          codName: `Agente ${i}`,
+          state: stateN,
+          coord: {
+            lat:
+              isNegativeX == 0
+                ? simulacao.city[0] + Math.random() * max
+                : simulacao.city[0] - Math.random() * max,
+            lng:
+              isNegativeY == 0
+                ? simulacao.city[1] + Math.random() * max
+                : simulacao.city[1] - Math.random() * max,
+          },
+        });
       }
-      //Vai passar o tanto de simulações que estão a ser executadas
-      return queuesExecutions.length;
-    } else return 'Simulação já está na fila de execução';
+      data.push(tempData);
+    }
+    await this.simulacaoRepository.executeSimulacao(
+      simulacao._id.toString(),
+      data,
+    );
+    this.logger.log('Simulação executada');
   }
 
   async executeSimulacao(simulacaoID: string) {
@@ -158,6 +206,96 @@ export class SimulacaoService {
       throw new HttpException(
         'Nenhuma base encontrada com esse ID',
         HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  //Busca os agentes pela suas caracteristicas
+  async findAgents(
+    simulacaoID: string,
+    agents: SearchsProps,
+  ): Promise<string[][] | string[]> {
+    const simulacao = await this.getSimulacaoByID(simulacaoID);
+
+    if (!simulacao)
+      throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
+    const structure = await this.baseService.getStructureByID(
+      simulacao.base._id.toString(),
+    );
+    if (!structure)
+      throw new HttpException(
+        'Tipo de estrutura não encontrada',
+        HttpStatus.NOT_FOUND,
+      );
+
+    try {
+      this.logger.log(`Buscando agentes na simulação ${simulacao.name}`);
+
+      //Vai buscar os dados originais dos agentes
+      //Pega a partir da estrutura da doença
+      const whereNeedFind: Array<Object> =
+        simulacao.base.parameters[structure.defaultSearch[0]][
+          structure.defaultSearch[1]
+        ];
+      let resultsSimulation: DatasProps[] | DatasProps = simulacao.result;
+      let agentsFound: string[][] | string[];
+
+      //Busca pelas propriedades dos agentes
+      if (agents.propertiesAgent) {
+        let indexFound = [];
+
+        //Vai buscar em todas caracteristicas dos agentes
+        for (let i = 0; i < whereNeedFind.length; i++) {
+          const whereActual = whereNeedFind[i];
+          //Verifica todas caracteristicas passadas pelo agente
+          for (let j = 0; j < agents.propertiesAgent.length; j++) {
+            const propertie = agents.propertiesAgent[j].properties;
+            const value = agents.propertiesAgent[j].value;
+            if (
+              //Verifica se possui aquela propriedade
+              whereActual.hasOwnProperty(propertie) &&
+              //Verifica se os valores são iguais
+              whereActual[propertie] == value
+            ) {
+              indexFound.push(i);
+            }
+          }
+        }
+
+        //Caso tenha achado algum agente
+        if (indexFound.length > 0)
+          resultsSimulation = resultsSimulation.map((agents, i) =>
+            agents.filter((a, index) => indexFound.includes(index)),
+          );
+        else return [];
+      }
+
+      //Vai buscar os agentes pelo estado
+      if (agents.stateAgent) {
+        resultsSimulation = resultsSimulation.map((agentsSimulation) =>
+          agentsSimulation.filter(
+            (agent) => agent.state === agents.stateAgent.value,
+          ),
+        );
+
+        //Vai converter os agentes para o nome do agente
+        agentsFound = resultsSimulation.map((agents) =>
+          agents.map((agent) => agent.codName),
+        );
+      } else {
+        /*
+          Se não possuir filtro por estado, não necessita filtrar todos os ciclos,
+          já que todos os ciclos vão contar agentes com a mesma propriedade
+        */
+        agentsFound = resultsSimulation[0].map((agents) => agents.codName);
+      }
+
+      return agentsFound;
+    } catch (e) {
+      this.logger.error('Erro ao encontrar o campo defaultSearch | ' + e);
+      throw new HttpException(
+        'Erro ao encontrar o campo defaultSearch',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

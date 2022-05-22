@@ -24,7 +24,7 @@ export const InfluenzaStructure: StructuresInterface = {
     Ambiente: {
       AMB: [],
       CON: [],
-      DISTRIBUICAOHUMANO: [],
+      DistribuicaoHumanos: [],
     },
     Humano: {
       INI: [],
@@ -36,4 +36,5 @@ export const InfluenzaStructure: StructuresInterface = {
       SIM: [],
     },
   },
+  defaultSearch: ['Ambiente', 'DistribuicaoHumano'],
 };

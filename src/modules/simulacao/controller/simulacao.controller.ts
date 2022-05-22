@@ -9,9 +9,10 @@ import {
 } from '@nestjs/common';
 
 import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
+import { FindDTO } from 'src/DTO/agentsFind.tdo';
+
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
-import { BaseService } from 'src/modules/base/service/base.service';
 
 @Controller('simulacao')
 export class SimulacaoController {
@@ -44,6 +45,14 @@ export class SimulacaoController {
   @Post('/:simulacaoID/execute')
   async executeSimulacao(@Param('simulacaoID') simulacaoID: string) {
     return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
+  }
+
+  @Get('/:simulacaoID/findAgents')
+  async findAgents(
+    @Param('simulacaoID') simulacaoID: string,
+    @Body() data: FindDTO,
+  ): Promise<string[][] | string[]> {
+    return await this.simulacaoService.findAgents(simulacaoID, data);
   }
 
   @Post('/:baseID')
