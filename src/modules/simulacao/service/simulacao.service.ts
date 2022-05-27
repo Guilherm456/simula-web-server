@@ -88,7 +88,7 @@ export class SimulacaoService {
     );
     for (let j = 0; j < fakeCiclos; j++) {
       const tempData = [];
-      for (let i = 0; i < 190; i++) {
+      for (let i = 0; i < agensNum; i++) {
         let stateN = Math.floor(Math.random() * (await estados).length);
         let isNegativeX = Math.floor(Math.random() * 2);
         let isNegativeY = Math.floor(Math.random() * 2);
@@ -214,7 +214,7 @@ export class SimulacaoService {
   async findAgents(
     simulacaoID: string,
     agents: SearchsProps,
-  ): Promise<string[][] | string[]> {
+  ): Promise<number[][] | number[]> {
     const simulacao = await this.getSimulacaoByID(simulacaoID);
 
     if (!simulacao)
@@ -228,6 +228,9 @@ export class SimulacaoService {
         HttpStatus.NOT_FOUND,
       );
 
+    if (!agents.stateAgent && agents.propertiesAgent.length === 0) {
+      return [];
+    }
     try {
       this.logger.log(`Buscando agentes na simulação ${simulacao.name}`);
 
@@ -237,11 +240,19 @@ export class SimulacaoService {
         simulacao.base.parameters[structure.defaultSearch[0]][
           structure.defaultSearch[1]
         ];
-      let resultsSimulation: DatasProps[] | DatasProps = simulacao.result;
-      let agentsFound: string[][] | string[];
+
+      //Vai adicionar um campo para achar os agentes (index de cada um)
+      let resultsSimulation: DatasProps[] = simulacao.result.map((resul) =>
+        resul.map((obj, i) => {
+          Object.defineProperty(obj, 'index', { value: i });
+          return obj;
+        }),
+      );
+
+      let agentsFound: number[][] | number[];
 
       //Busca pelas propriedades dos agentes
-      if (agents.propertiesAgent) {
+      if (agents.propertiesAgent && agents.propertiesAgent.length > 0) {
         let indexFound = [];
 
         //Vai buscar em todas caracteristicas dos agentes
@@ -265,7 +276,7 @@ export class SimulacaoService {
         //Caso tenha achado algum agente
         if (indexFound.length > 0)
           resultsSimulation = resultsSimulation.map((agents, i) =>
-            agents.filter((a, index) => indexFound.includes(index)),
+            agents.filter((a) => indexFound.includes(a.index)),
           );
         else return [];
       }
@@ -280,14 +291,14 @@ export class SimulacaoService {
 
         //Vai converter os agentes para o nome do agente
         agentsFound = resultsSimulation.map((agents) =>
-          agents.map((agent) => agent.codName),
+          agents.map((agent) => agent.index),
         );
       } else {
         /*
           Se não possuir filtro por estado, não necessita filtrar todos os ciclos,
           já que todos os ciclos vão contar agentes com a mesma propriedade
         */
-        agentsFound = resultsSimulation[0].map((agents) => agents.codName);
+        agentsFound = resultsSimulation[0].map((agents) => agents.index);
       }
 
       return agentsFound;

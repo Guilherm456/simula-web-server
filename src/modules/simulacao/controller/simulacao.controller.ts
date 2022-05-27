@@ -47,11 +47,11 @@ export class SimulacaoController {
     return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
   }
 
-  @Get('/:simulacaoID/findAgents')
+  @Post('/:simulacaoID/findAgents')
   async findAgents(
     @Param('simulacaoID') simulacaoID: string,
     @Body() data: FindDTO,
-  ): Promise<string[][] | string[]> {
+  ): Promise<number[][] | number[]> {
     return await this.simulacaoService.findAgents(simulacaoID, data);
   }
 

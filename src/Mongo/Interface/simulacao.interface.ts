@@ -12,6 +12,7 @@ export interface Simulacao extends Document {
 }
 
 interface Data {
+  index?: number;
   codName: string;
   state: number;
   coord: {
