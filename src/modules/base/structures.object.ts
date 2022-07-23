@@ -9,11 +9,11 @@ export const InfluenzaStructure: StructuresInterface = {
     },
     {
       name: 'Suscetível',
-      color: '#ffa500',
+      color: '#ffaf00',
     },
     {
       name: 'Exposto',
-      color: '#ffffdf',
+      color: '#15e6eb',
     },
     {
       name: 'Recuperado',
