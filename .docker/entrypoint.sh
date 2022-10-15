@@ -1,4 +1,4 @@
 #!/bin/sh
 
 yarn
-yarn start
+yarn dev

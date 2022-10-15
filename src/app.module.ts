@@ -12,15 +12,12 @@ import {AppServerModule} from './modules/app-server/app-server.module'
       isGlobal: true,
       envFilePath: `${process.cwd()}/.env.${process.env.NODE_ENV}`,
     }),
-    MongooseModule.forRoot(
-      `mongodb+srv://${process.env.MONGO_HOST}/${process.env.MONGO_DATABASE}?${process.env.MONGO_OPTIONS}`,
-      {
-        user: process.env.MONGO_USER,
-        pass: process.env.MONGO_PASSWORD,
-        useUnifiedTopology: true,
-        useNewUrlParser: true,
-      },
-    ),
+    MongooseModule.forRoot(`mongodb://${process.env.MONGO_HOST}`, {
+      user: process.env.MONGO_USER,
+      pass: process.env.MONGO_PASSWORD,
+      useUnifiedTopology: true,
+      useNewUrlParser: true,
+    }),
     BaseModule,
     SimulacaoModule,
     AppServerModule,
