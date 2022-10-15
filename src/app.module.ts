@@ -1,10 +1,10 @@
-import {Module} from '@nestjs/common'
-import {ConfigModule} from '@nestjs/config'
-import {MongooseModule} from '@nestjs/mongoose'
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 
-import {BaseModule} from './modules/base/base.module'
-import {SimulacaoModule} from './modules/simulacao/simulacao.module'
-import {AppServerModule} from './modules/app-server/app-server.module'
+import { BaseModule } from './modules/base/base.module';
+import { SimulacaoModule } from './modules/simulacao/simulacao.module';
+import { AppServerModule } from './modules/app-server/app-server.module';
 
 @Module({
   imports: [
