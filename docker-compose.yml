@@ -18,11 +18,11 @@ services:
     volumes:
       - ./.docker/dbdata:/data/db
     ports:
-      - 27027:27017
+      - 27017:27017
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=root
-      - MONGO_INITDB_DATABASE=global
+      - MONGO_INITDB_DATABASE=simulaWEB
     networks:
       - simula
 
