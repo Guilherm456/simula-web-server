@@ -1,0 +1,11 @@
+{
+  "name": "@simula/generator",
+  "private": true,
+  "version": "1.0.0",
+  "main": "dist/dev.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node ./generator",
+    "start:dev": "ts-node --esm src/dev.ts"
+  }
+}
