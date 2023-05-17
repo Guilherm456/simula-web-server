@@ -26,6 +26,7 @@ export class BaseRepository {
   }
 
   async updateBase(baseID: string, newBase: BaseDTO): Promise<Base> {
+    //@ts-ignore
     return await this.baseModel.replaceOne({ _id: baseID }, newBase);
   }
 

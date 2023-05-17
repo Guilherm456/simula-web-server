@@ -1,8 +1,8 @@
 import { Schema } from 'mongoose';
-import { InfluenzaSchema } from './influenza.base.schema';
+import { DengueSchema } from './dengue.base.schema';
 
 export const BaseSchema = new Schema({
   name: String,
-  parameters: InfluenzaSchema,
+  parameters: DengueSchema,
   type: String,
 });

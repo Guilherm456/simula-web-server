@@ -6,7 +6,10 @@ export interface StructuresInterface {
   //Os possíveis estados da doença
   states: StatesInterface;
   //Responsável por definir em quais objetos deve buscar os dados
-  defaultSearch: [string, string];
+  defaultSearch: string[] | string;
+
+  //Nome da pasta onde está os binários da simulaćão
+  outputFolder: string;
 }
 interface StateInterface {
   name: string;

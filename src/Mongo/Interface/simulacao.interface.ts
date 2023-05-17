@@ -15,10 +15,18 @@ interface Data {
   index?: number;
   codName: string;
   state: number;
-  coord: {
-    lat: number;
-    lng: number;
-  };
+  isArea?: boolean;
+  coord:
+    | {
+        lat: number;
+        lng: number;
+      }
+    | {
+        latStart: number;
+        lngStart: number;
+        latEnd: number;
+        lngEnd: number;
+      };
 }
 
 export interface DatasProps extends Array<Data> {}

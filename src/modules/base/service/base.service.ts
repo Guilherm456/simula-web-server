@@ -3,7 +3,7 @@ import { LoggerServer } from 'src/loggerServer';
 
 import { BaseDTO } from 'src/DTO/base.dto';
 
-import { InfluenzaStructure } from 'src/modules/base/structures.object';
+import { DengueStructure } from 'src/modules/base/structures.object';
 import { Base } from 'src/Mongo/Interface/base.interface';
 import {
   StatesInterface,
@@ -91,7 +91,7 @@ export class BaseService {
   }
 
   getAllStructures(): StructuresInterface[] {
-    return [InfluenzaStructure];
+    return [DengueStructure];
   }
 
   getStructureByName(structureName: string): StructuresInterface {

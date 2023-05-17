@@ -11,11 +11,10 @@ import { BaseService } from 'src/modules/base/service/base.service';
 
 import { LoggerServer } from 'src/loggerServer';
 
-import { writeFileSync, mkdirSync } from 'fs';
-
-const queuesExecutions = [];
+import { mkdirSync, writeFileSync } from 'fs';
 
 const path = require('path');
+const queuesExecutions = [];
 @Injectable()
 export class SimulacaoService {
   constructor(
@@ -67,15 +66,15 @@ export class SimulacaoService {
     this.logger.warn('Adicionando nova simulação na fila de execução');
     const simulacao = await this.getSimulacaoByID(simulacaoID);
     if (!simulacao) return;
-    this.fakeData(simulacao);
-    // if (!queuesExecutions.includes(simulacaoID)) {
-    //   queuesExecutions.push(simulacaoID);
-    //   if (queuesExecutions.length == 1) {
-    //     return await this.executeSimulacao(simulacaoID);
-    //   }
-    //   //Vai passar o tanto de simulações que estão a ser executadas
-    //   return queuesExecutions.length;
-    // } else return 'Simulação já está na fila de execução';
+    // this.fakeData(simulacao);
+    if (!queuesExecutions.includes(simulacaoID)) {
+      queuesExecutions.push(simulacaoID);
+      if (queuesExecutions.length == 1) {
+        return await this.executeSimulacao(simulacaoID);
+      }
+      //Vai passar o tanto de simulações que estão a ser executadas
+      return queuesExecutions.length;
+    } else return 'Simulação já está na fila de execução';
   }
 
   async fakeData(simulacao: Simulacao) {
@@ -119,6 +118,8 @@ export class SimulacaoService {
   }
 
   async executeSimulacao(simulacaoID: string) {
+    const csvConverter = require('csvjson-json2csv');
+
     const simulacao = await this.getSimulacaoByID(simulacaoID);
 
     //Vai buscar a estrutura da base
@@ -134,7 +135,7 @@ export class SimulacaoService {
     else {
       //Consegue o endereço da pasta da simulação
       const folderExec = path.join(
-        path.resolve('lib/simulacao/'),
+        path.resolve(`output/${structure.outputFolder}/`),
         `${simulacaoID}/`,
       );
 
@@ -144,26 +145,34 @@ export class SimulacaoService {
 
         const names = Object.keys(structure.type_parameters);
 
-        for (let i of names) {
-          const names_param = Object.keys(structure.type_parameters[i]);
-          const atualDir = path.join(folderExec, i);
-          mkdirSync(atualDir, { recursive: true });
+        for (let name of names) {
+          const names_param = Object.keys(structure.type_parameters[name]);
+          const actualDir = path.join(folderExec, name);
 
-          for (let j of names_param) {
-            //função temporária para testar
-            writeFileSync(
-              path.join(atualDir, `${j}.csv`),
-              JSON.stringify(structure.type_parameters[i][j].map((x) => x)),
-              {
-                encoding: 'utf-8',
-                flag: 'w+',
-              },
-            );
+          if (names_param.length == 0) {
+            mkdirSync(actualDir, { recursive: true });
+            for (let name_param of names_param) {
+              const csv = csvConverter(
+                simulacao.base.parameters[name][name_param],
+                {
+                  separator: ';',
+                },
+              );
+
+              writeFileSync(path.join(actualDir, `${name_param}.csv`), csv);
+            }
+          } else {
+            const csv = csvConverter(simulacao.base.parameters[name], {
+              separator: ';',
+            });
+            writeFileSync(path.join(actualDir, '.csv'), csv);
           }
         }
 
-        return true;
+        return simulacao;
       } catch (e) {
+        //Caso dê algum erro, vai remover a simulação da fila de execução
+        queuesExecutions.pop();
         this.logger.error('Algum erro ocorreu ao executar uma simulação');
         this.logger.error(e);
         throw new HttpException(

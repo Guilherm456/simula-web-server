@@ -1,5 +1,6 @@
-import { Document } from 'mongoose';
 import * as mongoose from 'mongoose';
+import { Document } from 'mongoose';
+import { Types } from './types.inteface';
 
 export interface Base extends Document {
   _id: mongoose.Schema.Types.ObjectId;
@@ -7,5 +8,5 @@ export interface Base extends Document {
   parameters: {
     [key: string]: any;
   };
-  type: 'influenza';
+  type: Types;
 }
