@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  backend:
-    build: .
-    entrypoint: .docker/entrypoint.sh
-    volumes:
-      - .:/home/node/app
-    ports:
-      - 3000:3000
-    expose:
-      - 3000:3000
-    depends_on:
-      - mongodb
-    networks:
-      - simula
-    container_name: backend
-    external_links:
-    - client
+  # backend:
+  #   build: .
+  #   entrypoint: .docker/entrypoint.sh
+  #   volumes:
+  #     - .:/home/node/app
+  #   ports:
+  #     - 3000:3000
+  #   expose:
+  #     - 3000:3000
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - simula
+  #   container_name: backend
+  #   external_links:
+  #   - client
 
   mongodb:
     image: mongo:latest
