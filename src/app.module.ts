@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { CacheModule } from '@nestjs/cache-manager';
+import { AppServerModule } from './modules/app-server/app-server.module';
 import { BaseModule } from './modules/base/base.module';
 import { SimulacaoModule } from './modules/simulacao/simulacao.module';
-import { AppServerModule } from './modules/app-server/app-server.module';
 
 @Module({
   imports: [
@@ -21,6 +22,11 @@ import { AppServerModule } from './modules/app-server/app-server.module';
     BaseModule,
     SimulacaoModule,
     AppServerModule,
+    CacheModule.register({
+      isGlobal: true,
+      max: 15,
+      ttl: 60,
+    }),
   ],
   controllers: [],
   providers: [],

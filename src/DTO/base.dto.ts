@@ -9,7 +9,6 @@ import {
 
 import { Types } from 'src/Mongo/Interface/types.inteface';
 import { DengueStructureDTO } from './dengue.base.dto';
-import { InfluenzaStructureDTO } from './influenza.base.dto';
 
 export class BaseDTO {
   @IsNotEmpty()
@@ -19,10 +18,11 @@ export class BaseDTO {
 
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  @Type(() => InfluenzaStructureDTO || DengueStructureDTO)
-  parameters: InfluenzaStructureDTO | DengueStructureDTO;
+  @Type(() => DengueStructureDTO)
+  parameters: DengueStructureDTO;
 
   @IsNotEmpty()
   @IsString()
   type: Types;
+  structureFinal: {};
 }

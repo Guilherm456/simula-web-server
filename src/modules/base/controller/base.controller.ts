@@ -21,6 +21,7 @@ import {
   StructuresInterface,
 } from 'src/Mongo/Interface/structures.interface';
 
+import { CacheInterceptor } from '@nestjs/cache-manager';
 //Filtro para verificar se é arquivos CSV
 //DESATIVADO TEMPORARIAMENTE
 const CSVFilter = (
@@ -43,6 +44,7 @@ const CSVFilter = (
 };
 
 @Controller('base')
+@UseInterceptors(CacheInterceptor)
 export class BaseController {
   constructor(private readonly baseService: BaseService) {}
 
