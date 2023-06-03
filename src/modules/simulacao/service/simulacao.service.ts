@@ -18,7 +18,7 @@ const queuesExecutions = []
 export interface ProcessExecution {
   id: string
   process: ChildProcessWithoutNullStreams
-  output: string
+  output?: string
 }
 
 @Injectable()
@@ -31,26 +31,50 @@ export class SimulacaoService {
 
   private executions: Record<string, ProcessExecution> = {}
 
+  async replaceColumn(simulacaoID: string, nameColumn: string, newValue: any) {
+    try {
+      return await this.simulacaoRepository.replaceColumn(
+        simulacaoID,
+        nameColumn,
+        newValue,
+      )
+    } catch {
+      throw new HttpException(
+        'Erro ao atualizar a simulação',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      )
+    }
+  }
+
   private generateExecutionId(): string {
     return Date.now().toString()
   }
 
-  async executeCommand(command: string): Promise<string> {
+  async executeCommand(simulationId: string, command: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const childProc = spawn(`${command}`, {shell: true})
       const id = this.generateExecutionId()
 
-      let output = ''
+      this.replaceColumn(simulationId, 'status', 'RUNNING')
+
+      this.executions[id] = {
+        id,
+        process: childProc,
+      }
 
       childProc.stdout.on('data', (data) => {
-        output += data
+        const message = `[${id}] ${data.toString()}`
+        this.logger.log(message)
       })
 
       childProc.stderr.on('data', (data) => {
-        output += data
+        const message = `[${id}] ${data.toString()}`
+        this.logger.error(message)
       })
 
       childProc.on('error', (error) => {
+        this.logger.error(`[${id}] ${error.message}`)
+        this.replaceColumn(simulationId, 'status', 'ERROR')
         reject(error)
       })
 
@@ -58,40 +82,110 @@ export class SimulacaoService {
         if (code !== 0) {
           // If there is an error, remove the process from the executions map
           delete this.executions[id]
-          reject(new Error(`Process exited with code ${code}: ${output}`))
+          const message = `Process exited with code ${code}`
+          this.logger.error(`[${id}] ${message}`)
+          this.replaceColumn(simulationId, 'status', 'ERROR')
+          reject(new Error(message))
         }
-      })
 
-      this.executions[id] = {
-        id,
-        process: childProc,
-        output,
-      }
+        this.replaceColumn(simulationId, 'status', 'FINISHED')
+      })
 
       resolve(id)
     })
   }
 
-  async getExecutionStatus(id: string): Promise<ProcessExecution> {
+  async getExecutionStatus(id: string): Promise<any> {
     if (!this.executions[id]) {
       throw new Error(`No execution found with id: ${id}`)
     }
-    return this.executions[id]
+
+    let status = ''
+    if (this.executions[id].process.killed) {
+      status = 'FINISHED_ERROR'
+    } else if (this.executions[id].process.exitCode === null) {
+      status = 'RUNNING'
+    } else if (this.executions[id].process.exitCode === 0) {
+      status = 'FINISHED_OK'
+    } else {
+      status = 'FINISHED_ERROR'
+    }
+
+    return {
+      id: this.executions[id].id,
+      output: this.executions[id].output,
+      status: status,
+    }
   }
 
-  async executeSimulacao(simulacaoID: string): Promise<string> {
-    const command = 'cd ./simulator && ./AEDES_Acoplado'
-    try {
-      const id = await this.executeCommand(command)
-      this.logger.log(`Execution started with id: ${id}`)
-      return id
-    } catch (error) {
-      this.logger.error('An error occurred during the execution of the command')
-      this.logger.error(error.message)
+  async executeSimulacao(simulacaoID: string) {
+    const csvConverter = require('csvjson-json2csv')
+
+    const simulacao = await this.getSimulacaoByID(simulacaoID)
+
+    //Vai buscar a estrutura da base
+    const structure = await this.baseService.getStructureByID(
+      simulacao.base._id.toString(),
+    )
+
+    if (structure == undefined) {
       throw new HttpException(
-        'Error during execution',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Tipo de estrutura não encontrada',
+        HttpStatus.NOT_FOUND,
       )
+    } else {
+      //Consegue o endereço da pasta da simulação
+      const folderExec = path.join(
+        path.resolve(`output/${structure.outputFolder}/`),
+        `${simulacaoID}/`,
+      )
+
+      try {
+        //Vai criar a pasta da simulação
+        mkdirSync(folderExec, {recursive: true})
+
+        const names = Object.keys(structure.type_parameters)
+
+        for (const name of names) {
+          const names_param = Object.keys(structure.type_parameters[name])
+          const actualDir = path.join(folderExec, name)
+
+          if (names_param.length == 0) {
+            mkdirSync(actualDir, {recursive: true})
+            for (const name_param of names_param) {
+              const csv = csvConverter(
+                simulacao.base.parameters[name][name_param],
+                {
+                  separator: ';',
+                },
+              )
+
+              writeFileSync(path.join(actualDir, `${name_param}.csv`), csv)
+            }
+          } else {
+            const csv = csvConverter(simulacao.base.parameters[name], {
+              separator: ';',
+            })
+            writeFileSync(path.join(actualDir, '.csv'), csv)
+          }
+        }
+
+        //Vai executar a simulação
+        const command = 'cd ./simulator && ./AEDES_Acoplado'
+        const id = await this.executeCommand(simulacaoID, command)
+        this.logger.log(`Execution started with id: ${id}`)
+
+        return simulacao
+      } catch (e) {
+        //Caso dê algum erro, vai remover a simulação da fila de execução
+        queuesExecutions.pop()
+        this.logger.error('Algum erro ocorreu ao executar uma simulação')
+        this.logger.error(e)
+        throw new HttpException(
+          'Erro ao criar pasta da simulação',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        )
+      }
     }
   }
 
