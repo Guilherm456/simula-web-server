@@ -1,10 +1,14 @@
-import {Injectable} from '@nestjs/common'
-import {InjectModel} from '@nestjs/mongoose'
-import {Model} from 'mongoose'
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
-import {SimulacaoDTO} from 'src/DTO/simulacao.dto'
-import {Base} from '../Interface/base.interface'
-import {DatasProps, Simulacao} from '../Interface/simulacao.interface'
+import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
+import { Base } from '../Interface/base.interface';
+import {
+  DatasProps,
+  Simulacao,
+  StatusEnum,
+} from '../Interface/simulacao.interface';
 
 @Injectable()
 export class SimulacaoRepository {
@@ -19,44 +23,44 @@ export class SimulacaoRepository {
   ): Promise<Simulacao> {
     return await this.simulacaoModel
       .findOneAndUpdate(
-        {_id: simulacaoID},
+        { _id: simulacaoID },
         {
           [nameColumn]: newValue,
         },
       )
-      .exec()
+      .exec();
   }
 
   async saveSimulacao(simulacao: SimulacaoDTO, base: Base): Promise<Simulacao> {
     const savedSimulacao = new this.simulacaoModel({
       ...simulacao,
       base: base,
-      progress: 0,
-    })
-    return await savedSimulacao.save()
+      status: StatusEnum.PENDING,
+    });
+    return await savedSimulacao.save();
   }
 
   async getAllSimulacoes(): Promise<Simulacao[]> {
     return await this.simulacaoModel
-      .find({}, {__v: false})
-      .sort({name: +1})
-      .exec()
+      .find({}, { __v: false })
+      .sort({ name: +1 })
+      .exec();
   }
 
-  async getSimulacoesByStatus(comparation: Object): Promise<Simulacao[]> {
+  async getSimulacoesByStatus(comparation: StatusEnum): Promise<Simulacao[]> {
     return await this.simulacaoModel
-      .find({progress: comparation}, {__v: false})
-      .sort({name: +1})
-      .exec()
+      .find({ status: comparation }, { __v: false })
+      .sort({ name: +1 })
+      .exec();
   }
   async getSimulacaoByID(ID: string): Promise<Simulacao> {
-    return await this.simulacaoModel.findById(ID, {__v: false}).exec()
+    return await this.simulacaoModel.findById(ID, { __v: false }).exec();
   }
 
   async getSimulacoesByBaseID(baseID: string): Promise<Simulacao[]> {
     return await this.simulacaoModel
-      .find({'base._id': baseID}, {__v: false})
-      .exec()
+      .find({ 'base._id': baseID }, { __v: false })
+      .exec();
   }
 
   async executeSimulacao(
@@ -65,13 +69,13 @@ export class SimulacaoRepository {
   ): Promise<Simulacao> {
     return await this.simulacaoModel
       .findOneAndUpdate(
-        {_id: simulacaoID},
+        { _id: simulacaoID },
         {
           result: data,
           progress: 100,
         },
       )
-      .exec()
+      .exec();
   }
 
   async updateSimulacao(
@@ -79,11 +83,11 @@ export class SimulacaoRepository {
     newSimulacao: SimulacaoDTO,
   ): Promise<Simulacao> {
     return await this.simulacaoModel
-      .findOneAndReplace({_id: simulacaoID}, newSimulacao)
-      .exec()
+      .findOneAndReplace({ _id: simulacaoID }, newSimulacao)
+      .exec();
   }
 
   async deleteSimulacao(simulacaoID: string): Promise<Simulacao> {
-    return await this.simulacaoModel.findByIdAndRemove(simulacaoID).exec()
+    return await this.simulacaoModel.findByIdAndRemove(simulacaoID).exec();
   }
 }

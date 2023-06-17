@@ -3,13 +3,13 @@ import { LoggerServer } from 'src/loggerServer';
 
 import { BaseDTO } from 'src/DTO/base.dto';
 
-import { DengueStructure } from 'src/modules/base/structures.object';
 import { Base } from 'src/Mongo/Interface/base.interface';
 import {
   StatesInterface,
   StructuresInterface,
 } from 'src/Mongo/Interface/structures.interface';
 import { BaseRepository } from 'src/Mongo/repository/base.repository';
+import { DengueStructure } from 'src/modules/base/structures.object';
 
 @Injectable()
 export class BaseService {
@@ -20,7 +20,6 @@ export class BaseService {
 
   convertJSON(file: Express.Multer.File) {
     const csvConverter = require('csvjson-csv2json');
-
     //Verifica o tamanho do arquivo, caso seja muito grande, será avisado no servidor
     if (file.size >= 10000000)
       this.logger.warn(
@@ -41,48 +40,75 @@ export class BaseService {
       this.logger.error('Inviado arquivos inválidos ou nenhum arquivo enviado');
       return new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
     }
-    structure = structure.toLowerCase();
 
-    this.logger.log(
-      `Fazendo o upload dos arquivos e convertendo para JSON. Número de arquivos: ${files.length}`,
-    );
+    try {
+      structure = structure.toLowerCase();
 
-    //Isso permite com que o sistema possa adicionar novos tipos de simulação
-    const structureFinal = new BaseDTO();
-    structureFinal.name = name;
-    switch (structure) {
-      case 'influenza':
-        if (files.length < 8)
+      this.logger.log(
+        `Fazendo o upload dos arquivos e convertendo para JSON. Número de arquivos: ${files.length}`,
+      );
+
+      //Isso permite com que o sistema possa adicionar novos tipos de simulação
+      const structureFinal = new BaseDTO();
+      structureFinal.name = name;
+      structureFinal.parameters = {} as any;
+      switch (structure) {
+        case 'influenza':
+          if (files.length < 8)
+            return new HttpException(
+              'Número de arquivos enviados é menor que o necessário para esta simulação',
+              HttpStatus.BAD_REQUEST,
+            );
+
+          // Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
+          structureFinal.parameters = {
+            Ambiente: {
+              AMB: this.convertJSON(files[0]),
+              CON: this.convertJSON(files[1]),
+              DistribuicaoHumano: this.convertJSON(files[2]),
+            },
+            Humanos: {
+              INI: this.convertJSON(files[3]),
+              MOV: this.convertJSON(files[4]),
+              CON: this.convertJSON(files[5]),
+              TRA: this.convertJSON(files[6]),
+            },
+            Simulacao: {
+              SIM: this.convertJSON(files[7]),
+            },
+          };
+          structureFinal.type = 'influenza';
+          return await this.saveBase(structureFinal);
+
+        case 'dengue':
+          const parameters = Object.keys(DengueStructure.type_parameters);
+          if (files.length < parameters.length)
+            return new HttpException(
+              'Número de arquivos enviados é menor que o necessário para esta simulação',
+              HttpStatus.BAD_REQUEST,
+            );
+          for (let i = 0; i < parameters.length; i++) {
+            structureFinal.parameters[parameters[i]] = this.convertJSON(
+              files[i],
+            );
+          }
+
+          structureFinal.type = 'dengue';
+
+          return await this.saveBase(structureFinal);
+
+        default:
           return new HttpException(
-            'Número de arquivos enviados é menor que o necessário para esta simulação',
+            'Estrutura não encontrada',
             HttpStatus.BAD_REQUEST,
           );
-
-        // Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
-        structureFinal.parameters = {
-          Ambiente: {
-            AMB: this.convertJSON(files[0]),
-            CON: this.convertJSON(files[1]),
-            DistribuicaoHumano: this.convertJSON(files[2]),
-          },
-          Humanos: {
-            INI: this.convertJSON(files[3]),
-            MOV: this.convertJSON(files[4]),
-            CON: this.convertJSON(files[5]),
-            TRA: this.convertJSON(files[6]),
-          },
-          Simulacao: {
-            SIM: this.convertJSON(files[7]),
-          },
-        };
-        structureFinal.type = 'influenza';
-        return await this.saveBase(structureFinal);
-
-      default:
-        return new HttpException(
-          'Estrutura não encontrada',
-          HttpStatus.BAD_REQUEST,
-        );
+      }
+    } catch (e) {
+      this.logger.error(e);
+      return new HttpException(
+        'Erro ao fazer upload dos arquivos',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

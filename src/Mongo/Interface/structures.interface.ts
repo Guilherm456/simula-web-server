@@ -8,7 +8,7 @@ export interface StructuresInterface {
   //Responsável por definir em quais objetos deve buscar os dados
   defaultSearch: string[] | string;
 
-  //Nome da pasta onde está os binários da simulaćão
+  //Nome da pasta onde está os binários da simulação
   outputFolder: string;
 }
 interface StateInterface {

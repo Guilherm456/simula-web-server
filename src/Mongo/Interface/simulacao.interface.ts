@@ -1,6 +1,13 @@
-import { Document } from 'mongoose';
 import * as mongoose from 'mongoose';
+import { Document } from 'mongoose';
 import { Base } from './base.interface';
+
+export enum StatusEnum {
+  'PENDING' = 'PENDING',
+  'RUNNING' = 'RUNNING',
+  'FINISHED' = 'FINISHED',
+  'ERROR' = 'ERROR',
+}
 
 export interface Simulacao extends Document {
   _id: mongoose.Schema.Types.ObjectId;
@@ -8,6 +15,7 @@ export interface Simulacao extends Document {
   city: [number, number];
   base: Base;
   progress: number;
+  status: StatusEnum;
   result: DatasProps[];
 }
 

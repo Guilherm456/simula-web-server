@@ -14,31 +14,28 @@ import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
 
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
-import {
-  ProcessExecution,
-  SimulacaoService,
-} from 'src/modules/simulacao/service/simulacao.service';
+import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 
 @Controller('simulacao')
 @UseInterceptors(CacheInterceptor)
 export class SimulacaoController {
   constructor(private readonly simulacaoService: SimulacaoService) {}
 
-  // Execute simulation
-  @Post('/execute')
-  async executeSimulacao(
-    @Param('simulacaoID') simulacaoID: string,
-  ): Promise<string> {
-    return await this.simulacaoService.executeSimulacao(simulacaoID);
-  }
+  // // Execute simulation
+  // @Post('/execute')
+  // async executeSimulacao(
+  //   @Param('simulacaoID') simulacaoID: string,
+  // ): Promise<string> {
+  //   return await this.simulacaoService.executeSimulacao(simulacaoID);
+  // }
 
   // Get simulation status
-  @Get('/:simulacaoID/status')
-  async getSimulacaoStatus(
-    @Param('simulacaoID') simulacaoID: string,
-  ): Promise<ProcessExecution> {
-    return await this.simulacaoService.getSimulacaoStatus(simulacaoID);
-  }
+  // @Get('/:simulacaoID/status')
+  // async getSimulacaoStatus(
+  //   @Param('simulacaoID') simulacaoID: string,
+  // ): Promise<ProcessExecution> {
+  //   return await this.simulacaoService.getSimulacaoStatus(simulacaoID);
+  // }
 
   @Get()
   async getAllSimulacoes(): Promise<Simulacao[]> {
@@ -64,11 +61,10 @@ export class SimulacaoController {
     return await this.simulacaoService.getSimulacoesByBaseID(baseID);
   }
 
-  // @Post('/:simulacaoID/execute')
-  // async executeSimulacao(@Param('simulacaoID') simulacaoID: string) {
-  //   // return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
-  //   return await this.simulacaoService.executeSimulacao(simulacaoID)
-  // }
+  @Post('/:simulacaoID/execute')
+  async executeSimulacao(@Param('simulacaoID') simulacaoID: string) {
+    return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
+  }
 
   @Post('/:simulacaoID/findAgents')
   async findAgents(
