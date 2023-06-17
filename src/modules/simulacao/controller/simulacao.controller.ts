@@ -7,10 +7,10 @@ import {
   Patch,
   Post,
   UseInterceptors,
-} from '@nestjs/common';
+} from '@nestjs/common'
 
-import { FindDTO } from 'src/DTO/agentsFind.tdo';
-import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
+import {FindDTO} from 'src/DTO/agentsFind.tdo'
+import {SimulacaoDTO} from 'src/DTO/simulacao.dto'
 
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
@@ -39,26 +39,26 @@ export class SimulacaoController {
 
   @Get()
   async getAllSimulacoes(): Promise<Simulacao[]> {
-    return await this.simulacaoService.getAllSimulacoes();
+    return await this.simulacaoService.getAllSimulacoes()
   }
 
   @Get(':ID')
   async getSimulacaoByID(@Param('ID') ID: string): Promise<Simulacao> {
-    return await this.simulacaoService.getSimulacaoByID(ID);
+    return await this.simulacaoService.getSimulacaoByID(ID)
   }
 
   @Get('/status/:status')
   async getSimulacoesByStatus(
     @Param('status') status: string,
   ): Promise<Simulacao[]> {
-    return await this.simulacaoService.getSimulacoesByStatus(status);
+    return await this.simulacaoService.getSimulacoesByStatus(status)
   }
 
   @Get('/base/:baseID')
   async getSimulacoesByBaseID(
     @Param('baseID') baseID: string,
   ): Promise<Simulacao[]> {
-    return await this.simulacaoService.getSimulacoesByBaseID(baseID);
+    return await this.simulacaoService.getSimulacoesByBaseID(baseID)
   }
 
   @Post('/:simulacaoID/execute')
@@ -71,7 +71,7 @@ export class SimulacaoController {
     @Param('simulacaoID') simulacaoID: string,
     @Body() data: FindDTO,
   ): Promise<number[][] | number[]> {
-    return await this.simulacaoService.findAgents(simulacaoID, data);
+    return await this.simulacaoService.findAgents(simulacaoID, data)
   }
 
   @Post('/:baseID')
@@ -79,7 +79,7 @@ export class SimulacaoController {
     @Body() simulacao: SimulacaoDTO,
     @Param('baseID') baseID: string,
   ): Promise<Simulacao> {
-    return await this.simulacaoService.saveSimulacao(simulacao, baseID);
+    return await this.simulacaoService.saveSimulacao(simulacao, baseID)
   }
 
   @Patch(':simulacaoID')
@@ -90,11 +90,11 @@ export class SimulacaoController {
     return await this.simulacaoService.updateSimulacao(
       simulacaoID,
       newSimulacao,
-    );
+    )
   }
 
   @Delete(':simulacaoID')
   async deleteSimulacao(@Param('simulacaoID') simulacaoID: string) {
-    return await this.simulacaoService.deleteSimulacao(simulacaoID);
+    return await this.simulacaoService.deleteSimulacao(simulacaoID)
   }
 }
