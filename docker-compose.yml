@@ -58,3 +58,4 @@ networks:
   simula:
     name: simula
     driver: bridge
+    external: true

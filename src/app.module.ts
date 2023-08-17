@@ -16,8 +16,8 @@ import { SimulacaoModule } from './modules/simulacao/simulacao.module';
     MongooseModule.forRoot(`mongodb://${process.env.MONGO_HOST}`, {
       user: process.env.MONGO_USER,
       pass: process.env.MONGO_PASSWORD,
-      useUnifiedTopology: true,
-      useNewUrlParser: true,
+      // useUnifiedTopology: true,
+      // useNewUrlParser: true,
     }),
     BaseModule,
     SimulacaoModule,

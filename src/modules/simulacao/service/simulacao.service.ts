@@ -1,8 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 
+import * as csvConverter from 'csvjson-json2csv';
 import { mkdirSync, writeFileSync } from 'fs';
-import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
+import path from 'path';
+import { SimulacaoDTO, SimulacaoDTOEdit } from 'src/DTO/simulacao.dto';
+import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 import {
   DatasProps,
   SearchsProps,
@@ -11,7 +14,6 @@ import {
 import { SimulacaoRepository } from 'src/Mongo/repository/simulacao.repository';
 import { LoggerServer } from 'src/loggerServer';
 import { BaseService } from 'src/modules/base/service/base.service';
-const path = require('path');
 const queuesExecutions = [];
 
 // proc execution information
@@ -98,8 +100,6 @@ export class SimulacaoService {
   }
 
   async executeSimulacao(simulacaoID: string) {
-    const csvConverter = require('csvjson-json2csv');
-
     const simulacao = await this.getSimulacaoByID(simulacaoID);
 
     //Vai buscar a estrutura da base
@@ -129,7 +129,7 @@ export class SimulacaoService {
           const names_param = Object.keys(structure.type_parameters[name]);
           const actualDir = path.join(folderExec, name);
 
-          if (names_param.length == 0) {
+          if (names_param.length) {
             mkdirSync(actualDir, { recursive: true });
             for (const name_param of names_param) {
               const csv = csvConverter(
@@ -145,7 +145,7 @@ export class SimulacaoService {
             const csv = csvConverter(simulacao.base.parameters[name], {
               separator: ';',
             });
-            writeFileSync(path.join(actualDir, '.csv'), csv);
+            writeFileSync(path.join(actualDir, `${name}.csv`), csv);
           }
         }
 
@@ -194,8 +194,8 @@ export class SimulacaoService {
     } else throw new HttpException('Base não encontrada', HttpStatus.NOT_FOUND);
   }
 
-  async getAllSimulacoes(): Promise<Simulacao[]> {
-    return await this.simulacaoRepository.getAllSimulacoes();
+  async getSimulatons(query?: FilterDTO): Promise<Simulacao[]> {
+    return await this.simulacaoRepository.getSimulations(query);
   }
 
   async getSimulacaoByID(ID: string): Promise<Simulacao> {
@@ -253,26 +253,34 @@ export class SimulacaoService {
 
   async updateSimulacao(
     simulacaoID: string,
-    newSimulacao: SimulacaoDTO,
+    newSimulacao: SimulacaoDTOEdit,
   ): Promise<Simulacao> {
-    const simulacaoOld = await this.simulacaoRepository.getSimulacaoByID(
-      simulacaoID,
-    );
-    if (!simulacaoOld) {
-      throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
-    }
+    try {
+      const simulacaoOld =
+        await this.simulacaoRepository.getSimulacaoByID(simulacaoID);
+      if (!simulacaoOld) {
+        throw new HttpException(
+          'Simulação não encontrada',
+          HttpStatus.NOT_FOUND,
+        );
+      }
 
-    return await this.simulacaoRepository.updateSimulacao(
-      simulacaoID,
-      newSimulacao,
-    );
+      return await this.simulacaoRepository.updateSimulacao(
+        simulacaoID,
+        newSimulacao,
+      );
+    } catch (e) {
+      throw new HttpException(
+        'Erro ao atualizar simulação',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async deleteSimulacao(simulacaoID: string): Promise<Simulacao> {
     try {
-      const simulacaoDeleted = await this.simulacaoRepository.deleteSimulacao(
-        simulacaoID,
-      );
+      const simulacaoDeleted =
+        await this.simulacaoRepository.deleteSimulacao(simulacaoID);
       this.logger.warn(`Base deletada: ${simulacaoDeleted.name}`);
       return simulacaoDeleted;
     } catch (e) {
@@ -312,7 +320,7 @@ export class SimulacaoService {
 
       //Vai buscar os dados originais dos agentes
       //Pega a partir da estrutura da doença
-      const whereNeedFind: Array<Object> =
+      const whereNeedFind: Array<any> =
         simulacao.base.parameters[structure.defaultSearch[0]][
           structure.defaultSearch[1]
         ];

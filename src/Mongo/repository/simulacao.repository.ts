@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 
 import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
 import { Base } from '../Interface/base.interface';
+import { FilterDTO } from '../Interface/query.interface';
 import {
   DatasProps,
   Simulacao,
@@ -40,9 +41,9 @@ export class SimulacaoRepository {
     return await savedSimulacao.save();
   }
 
-  async getAllSimulacoes(): Promise<Simulacao[]> {
+  async getSimulations(query?: FilterDTO): Promise<Simulacao[]> {
     return await this.simulacaoModel
-      .find({}, { __v: false })
+      .find({ __v: false, ...query })
       .sort({ name: +1 })
       .exec();
   }

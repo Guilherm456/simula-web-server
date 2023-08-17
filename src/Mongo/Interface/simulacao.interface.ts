@@ -14,7 +14,6 @@ export interface Simulacao extends Document {
   name: string;
   city: [number, number];
   base: Base;
-  progress: number;
   status: StatusEnum;
   result: DatasProps[];
 }
