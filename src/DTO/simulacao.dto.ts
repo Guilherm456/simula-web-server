@@ -1,10 +1,15 @@
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
   IsNotEmpty,
+  IsNotEmptyObject,
   IsString,
   Length,
+  ValidateNested,
 } from 'class-validator';
+import { DengueStructureDTO } from './dengue.base.dto';
+import { InfluenzaStructureDTO } from './influenza.base.dto';
 
 export class SimulacaoDTO {
   @IsNotEmpty()
@@ -16,4 +21,11 @@ export class SimulacaoDTO {
   @ArrayMinSize(2)
   @IsNotEmpty()
   city: number[];
+}
+
+export class SimulacaoDTOEdit extends SimulacaoDTO {
+  @IsNotEmptyObject({}, { each: true })
+  @ValidateNested({ each: true })
+  @Type(() => DengueStructureDTO || InfluenzaStructureDTO)
+  parameters: DengueStructureDTO | InfluenzaStructureDTO;
 }

@@ -1,91 +1,110 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { GridFSBucket, ObjectId } from 'mongodb';
 import { Connection, Model } from 'mongoose';
 
-import { GridFSBucket } from 'mongodb';
 import { BaseDTO } from 'src/DTO/base.dto';
 import { LoggerServer } from 'src/loggerServer';
+import { Readable } from 'stream';
 import { Base } from '../Interface/base.interface';
-
+import { FilterDTO } from '../Interface/query.interface';
 @Injectable()
 export class BaseRepository {
-  private readonly gridFSBucket: GridFSBucket;
+  private gridFSBucket: GridFSBucket;
 
   constructor(
     @InjectModel('base') private readonly baseModel: Model<Base>,
-    private readonly logger: LoggerServer,
-
     @InjectConnection() private readonly connection: Connection,
+    private readonly logger: LoggerServer,
   ) {
-    //@ts-ignore
-    this.gridFSBucket = new GridFSBucket(this.connection.db, {
+    this.gridFSBucket = new GridFSBucket(this.connection.db as any, {
       bucketName: 'parameters',
     });
   }
 
-  async getAllBase(): Promise<Base[]> {
+  async getBases(query: FilterDTO): Promise<Base[]> {
     return await this.baseModel
-      .find({}, { __v: false })
+      .find({ __v: false, ...query })
       .sort({ name: +1 })
       .exec();
   }
 
   async getBaseByID(baseID: string): Promise<Base> {
-    return await this.baseModel.findById(baseID, { __v: false }).exec();
-  }
-
-  async saveParametersToGridFS(
-    parameters: any,
-    nameBase: string,
-  ): Promise<string[]> {
-    const fileIds: string[] = [];
-
-    for (const key in parameters) {
-      const parameter = parameters[key];
-
-      if (typeof parameter === 'object') {
-        const parameterJSON = JSON.stringify(parameter);
-
-        const uploadStream = this.gridFSBucket.openUploadStream(
-          `${key}-${nameBase}.json`,
-        );
-        uploadStream.write(parameterJSON);
-        uploadStream.end();
-
-        fileIds.push(uploadStream.id.toString());
-      }
-    }
-
-    return fileIds;
-  }
-
-  async saveBase(newBase: BaseDTO): Promise<Base> {
-    const { parameters, ...baseData } = newBase;
-
-    const parameterFileIds = await this.saveParametersToGridFS(
+    const base = await this.baseModel.findById(baseID, { __v: false }).exec();
+    const parameters = await this.readFile(base.parametersID.toString());
+    return {
+      ...base.toJSON(),
       parameters,
-      baseData.name,
+    } as Base;
+  }
+
+  async readFile(id: string): Promise<any> {
+    const stream = this.gridFSBucket.openDownloadStream(new ObjectId(id));
+
+    const chunks = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+    return JSON.parse(buffer.toString('utf-8'));
+  }
+
+  async uploadFile(parameters: object): Promise<string> {
+    const uploadStream = this.gridFSBucket.openUploadStream(
+      `parameters-${Date.now()}.json`,
     );
 
-    this.logger.log(
-      `Salvando base de dados: ${baseData.name} ${JSON.stringify(
-        parameterFileIds,
-      )}`,
-    );
+    const stream = new Readable();
+    stream.push(JSON.stringify(parameters));
+    stream.push(null);
+
+    stream.pipe(uploadStream);
+    return uploadStream.id.toString() as string;
+  }
+
+  async saveBase(baseDTO: BaseDTO): Promise<Base> {
+    const { parameters } = baseDTO;
+
+    const parametersID = (await this.uploadFile(parameters)) as any;
+
+    delete baseDTO.parameters;
     const base = new this.baseModel({
-      ...baseData,
-      parameterFileIds,
+      ...baseDTO,
+      parametersID,
     });
-
     return await base.save();
   }
 
-  async updateBase(baseID: string, newBase: BaseDTO): Promise<Base> {
-    //@ts-ignore
-    return await this.baseModel.replaceOne({ _id: baseID }, newBase);
+  async updateBase(
+    baseID: string,
+    newBase: BaseDTO,
+    parameters: any,
+  ): Promise<boolean> {
+    await this.gridFSBucket.delete(new ObjectId(parameters));
+
+    const parametersID = (await this.uploadFile(newBase.parameters)) as any;
+
+    delete newBase.parameters;
+
+    await this.baseModel
+      .replaceOne(
+        { _id: baseID },
+        {
+          ...newBase,
+          parametersID,
+        },
+        {
+          new: true,
+        },
+      )
+      .exec();
+
+    return true;
   }
 
   async deleteBase(baseID: string): Promise<Base> {
-    return await this.baseModel.findOneAndDelete({ _id: baseID }).exec();
+    const base = await this.baseModel.findOneAndDelete({ _id: baseID }).exec();
+    await this.gridFSBucket.delete(new ObjectId(base.parameters));
+    return base;
   }
 }

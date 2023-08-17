@@ -5,8 +5,7 @@ import { Types } from './types.inteface';
 export interface Base extends Document {
   _id: mongoose.Schema.Types.ObjectId;
   name: string;
-  parameters: {
-    [key: string]: any;
-  };
+  parameters: string;
+  parametersID: mongoose.Schema.Types.ObjectId;
   type: Types;
 }

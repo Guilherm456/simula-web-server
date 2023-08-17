@@ -3,13 +3,18 @@ import { LoggerServer } from 'src/loggerServer';
 
 import { BaseDTO } from 'src/DTO/base.dto';
 
+import * as csvConverter from 'csvjson-csv2json';
 import { Base } from 'src/Mongo/Interface/base.interface';
+import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 import {
   StatesInterface,
   StructuresInterface,
 } from 'src/Mongo/Interface/structures.interface';
 import { BaseRepository } from 'src/Mongo/repository/base.repository';
-import { DengueStructure } from 'src/modules/base/structures.object';
+import {
+  DengueStructure,
+  TesteStructure,
+} from 'src/modules/base/structures.object';
 
 @Injectable()
 export class BaseService {
@@ -19,7 +24,6 @@ export class BaseService {
   ) {}
 
   convertJSON(file: Express.Multer.File) {
-    const csvConverter = require('csvjson-csv2json');
     //Verifica o tamanho do arquivo, caso seja muito grande, será avisado no servidor
     if (file.size >= 10000000)
       this.logger.warn(
@@ -41,83 +45,63 @@ export class BaseService {
       return new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
     }
 
-    try {
-      structure = structure.toLowerCase();
+    structure = structure.toLowerCase();
 
-      this.logger.log(
-        `Fazendo o upload dos arquivos e convertendo para JSON. Número de arquivos: ${files.length}`,
+    const structureObject = this.getStructureByName(structure);
+    this.logger.log(`Estrutura encontrada: ${structureObject.name}`);
+    if (!structureObject)
+      return new HttpException(
+        'Estrutura não encontrada',
+        HttpStatus.BAD_REQUEST,
       );
 
-      //Isso permite com que o sistema possa adicionar novos tipos de simulação
-      const structureFinal = new BaseDTO();
-      structureFinal.name = name;
-      structureFinal.parameters = {} as any;
-      switch (structure) {
-        case 'influenza':
-          if (files.length < 8)
-            return new HttpException(
-              'Número de arquivos enviados é menor que o necessário para esta simulação',
-              HttpStatus.BAD_REQUEST,
-            );
-
-          // Irá gerar a estruturação (um ponto a se melhorar é a forma como o sistema identifica os arquivos, ele não deve ser por ordem)
-          structureFinal.parameters = {
-            Ambiente: {
-              AMB: this.convertJSON(files[0]),
-              CON: this.convertJSON(files[1]),
-              DistribuicaoHumano: this.convertJSON(files[2]),
-            },
-            Humanos: {
-              INI: this.convertJSON(files[3]),
-              MOV: this.convertJSON(files[4]),
-              CON: this.convertJSON(files[5]),
-              TRA: this.convertJSON(files[6]),
-            },
-            Simulacao: {
-              SIM: this.convertJSON(files[7]),
-            },
-          };
-          structureFinal.type = 'influenza';
-          return await this.saveBase(structureFinal);
-
-        case 'dengue':
-          const parameters = Object.keys(DengueStructure.type_parameters);
-          if (files.length < parameters.length)
-            return new HttpException(
-              'Número de arquivos enviados é menor que o necessário para esta simulação',
-              HttpStatus.BAD_REQUEST,
-            );
-          for (let i = 0; i < parameters.length; i++) {
-            structureFinal.parameters[parameters[i]] = this.convertJSON(
-              files[i],
-            );
-          }
-
-          structureFinal.type = 'dengue';
-
-          return await this.saveBase(structureFinal);
-
-        default:
-          return new HttpException(
-            'Estrutura não encontrada',
-            HttpStatus.BAD_REQUEST,
-          );
-      }
-    } catch (e) {
-      this.logger.error(e);
+    if (structureObject.lengthParams !== files.length)
       return new HttpException(
-        'Erro ao fazer upload dos arquivos',
+        'Número de arquivos enviados é diferente que o necessário para esta simulação',
+        HttpStatus.BAD_REQUEST,
+      );
+
+    this.logger.log(
+      `Fazendo o upload dos arquivos e convertendo para JSON. Número de arquivos: ${files.length}`,
+    );
+
+    //Isso permite com que o sistema possa adicionar novos tipos de simulação
+    const structureFinal = new BaseDTO();
+    structureFinal.name = name;
+    structureFinal.parameters = {} as any;
+    structureFinal.type = structure as any;
+    const params = Object.keys(structureObject.type_parameters);
+
+    for (let i = 0; i < params.length; i++) {
+      const param = params[i];
+      const subParams = Object.keys(structureObject.type_parameters[param]);
+      if (subParams.length === 0) {
+        structureFinal.parameters[param] = this.convertJSON(files[i]);
+      } else {
+        for (const subParam of subParams) {
+          structureFinal.parameters[param][subParam] = this.convertJSON(
+            files[i],
+          );
+          i++;
+        }
+      }
+    }
+    try {
+      return await this.baseRepository.saveBase(structureFinal);
+    } catch (e) {
+      return new HttpException(
+        `Erro ao salvar a base ${e}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  async getAllBase(): Promise<Base[]> {
-    return await this.baseRepository.getAllBase();
+  async getBases(query: FilterDTO): Promise<Base[]> {
+    return await this.baseRepository.getBases(query);
   }
 
   getAllStructures(): StructuresInterface[] {
-    return [DengueStructure];
+    return [DengueStructure, TesteStructure];
   }
 
   getStructureByName(structureName: string): StructuresInterface {
@@ -125,8 +109,8 @@ export class BaseService {
     const structure = structures.find(
       (elemm) => elemm.name.toLowerCase() === structureName.toLowerCase(),
     );
-    if (structure == undefined) {
-      return null;
+    if (!structure) {
+      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
     } else return structure;
   }
 
@@ -160,20 +144,15 @@ export class BaseService {
   }
 
   async getBaseByID(baseID: string): Promise<Base> {
-    try {
-      const base = await this.baseRepository.getBaseByID(baseID);
-      if (!base)
-        throw new HttpException(
-          'Nenhuma base encontrada com esse ID',
-          HttpStatus.NOT_FOUND,
-        );
-      return base;
-    } catch (e) {
+    const base = await this.baseRepository.getBaseByID(baseID);
+
+    if (!!base)
       throw new HttpException(
         'Nenhuma base encontrada com esse ID',
         HttpStatus.NOT_FOUND,
       );
-    }
+
+    return base;
   }
 
   async saveBase(newBase: BaseDTO): Promise<Base> {
@@ -181,20 +160,21 @@ export class BaseService {
   }
 
   async updateBase(baseID: string, newBase: BaseDTO): Promise<Base> {
-    const base = await this.baseRepository.getBaseByID(baseID);
+    try {
+      const base = await this.baseRepository.getBaseByID(baseID);
+      if (!base)
+        throw new HttpException(
+          'Nenhuma base encontrada com esse ID',
+          HttpStatus.NOT_FOUND,
+        );
 
-    if (!baseID)
-      throw new HttpException(
-        'Nenhuma base encontrada com esse ID',
-        HttpStatus.NOT_FOUND,
-      );
+      await this.baseRepository.updateBase(baseID, newBase, base.parametersID);
 
-    const updatedBase = await this.baseRepository.updateBase(baseID, newBase);
-    if (updatedBase) {
-      this.logger.warn(`Base atualizada: ${updatedBase.name}`);
+      this.logger.warn(`Base atualizada: ${newBase.name}`);
       return this.baseRepository.getBaseByID(baseID);
-    } else {
-      this.logger.error('Erro ao atualizar a base!');
+    } catch (e) {
+      this.logger.error(`Erro ao atualizar a base! Erro: ${e}`);
+
       throw new HttpException(
         'Erro ao atualizar base',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -205,11 +185,12 @@ export class BaseService {
   async deleteBase(baseID: string): Promise<Base> {
     try {
       const baseDeleted = await this.baseRepository.deleteBase(baseID);
+
       this.logger.warn(`Base deletada: ${baseDeleted.name}`);
       return baseDeleted;
     } catch (e) {
       throw new HttpException(
-        'Nenhuma base encontrada com esse ID',
+        'Algum erro ocorreu ao deletar a base',
         HttpStatus.NOT_FOUND,
       );
     }

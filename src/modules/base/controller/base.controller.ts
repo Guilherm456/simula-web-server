@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
@@ -22,12 +23,13 @@ import {
 } from 'src/Mongo/Interface/structures.interface';
 
 import { CacheInterceptor } from '@nestjs/cache-manager';
+import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 //Filtro para verificar se é arquivos CSV
 //DESATIVADO TEMPORARIAMENTE
 const CSVFilter = (
   req: Express.Request,
   file: Express.Multer.File,
-  callback: Function,
+  callback: any,
 ) => {
   //Verifica se é arquivos CSV, caso não seja, aponta o erro ao usuário
   if (file.mimetype !== 'text/csv')
@@ -49,8 +51,8 @@ export class BaseController {
   constructor(private readonly baseService: BaseService) {}
 
   @Get()
-  async getAllBase(): Promise<Base[]> {
-    return await this.baseService.getAllBase();
+  async getAllBase(@Query() query: FilterDTO): Promise<Base[]> {
+    return await this.baseService.getBases(query);
   }
 
   //Retorna todas as estruturas

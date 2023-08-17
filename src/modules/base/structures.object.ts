@@ -3,6 +3,7 @@ import { StructuresInterface } from 'src/Mongo/Interface/structures.interface';
 export const DengueStructure: StructuresInterface = {
   name: 'Dengue',
   states: [],
+  lengthParams: 41,
   type_parameters: {
     '0-AMB-00-IndexQuadras': [],
     '0-AMB-01-IndexVizinhancas': [],
@@ -47,5 +48,17 @@ export const DengueStructure: StructuresInterface = {
     pes: [],
   },
   defaultSearch: ['aa', 'aaa'],
-  outputFolder: 'dengue',
+  outputFolder: 'dengue/',
+};
+
+//APENAS PARA TESTE
+export const TesteStructure: StructuresInterface = {
+  name: 'TESTE123',
+  states: [],
+  lengthParams: 1,
+  type_parameters: {
+    a: [],
+  },
+  defaultSearch: ['aa', 'aaa'],
+  outputFolder: 'teste_files/',
 };
