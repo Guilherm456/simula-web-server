@@ -101,7 +101,6 @@ export class SimulacaoService {
 
   async executeSimulacao(simulacaoID: string) {
     const simulacao = await this.getSimulacaoByID(simulacaoID);
-
     //Vai buscar a estrutura da base
     const structure = await this.baseService.getStructureByID(
       simulacao.base._id.toString(),
@@ -112,66 +111,66 @@ export class SimulacaoService {
         'Tipo de estrutura não encontrada',
         HttpStatus.NOT_FOUND,
       );
-    } else {
-      //Consegue o endereço da pasta da simulação
-      const folderExec = path.resolve(`output/${structure.outputFolder}/`);
+    }
 
-      this.logger.log(
-        `Criando pasta da simulação ${simulacao.name} na pasta ${folderExec}`,
-      );
+    const parameters = await this.baseService.getParameters(
+      simulacao.base.parametersID.toString(),
+    );
+    //Consegue o endereço da pasta da simulação
+    const folderExec = path.resolve(`output/${structure.outputFolder}/`);
 
-      try {
-        //Vai criar a pasta da simulação
-        mkdirSync(folderExec, { recursive: true });
+    this.logger.log(
+      `Criando pasta da simulação ${simulacao.name} na pasta ${folderExec}`,
+    );
 
-        const names = Object.keys(structure.type_parameters);
+    try {
+      //Vai criar a pasta da simulação
+      mkdirSync(folderExec, { recursive: true });
 
-        for (const name of names) {
-          const names_param = Object.keys(structure.type_parameters[name]);
-          const actualDir = path.join(folderExec, name);
+      const names = Object.keys(structure.type_parameters);
 
-          if (names_param.length) {
-            mkdirSync(actualDir, { recursive: true });
-            for (const name_param of names_param) {
-              const csv = Papa.unparse(
-                simulacao.base.parameters[name][name_param],
-                {
-                  delimiter: ';',
-                  quotes: false,
-                },
-              );
+      for (const name of names) {
+        const names_param = Object.keys(structure.type_parameters[name]);
+        const actualDir = path.join(folderExec, name);
 
-              writeFileSync(path.join(actualDir, `${name_param}.csv`), csv);
-            }
-          } else {
-            const csv = Papa.unparse(simulacao.base.parameters[name], {
+        if (names_param.length) {
+          mkdirSync(actualDir, { recursive: true });
+          for (const name_param of names_param) {
+            const csv = Papa.unparse(parameters[name][name_param], {
               delimiter: ';',
               quotes: false,
             });
 
-            writeFileSync(path.join(folderExec, `${name}.csv`), csv, {
-              flag: 'w+',
-              encoding: 'utf8',
-            });
+            writeFileSync(path.join(actualDir, `${name_param}.csv`), csv);
           }
+        } else {
+          const csv = Papa.unparse(parameters[name], {
+            delimiter: ';',
+            quotes: false,
+          });
+
+          writeFileSync(path.join(folderExec, `${name}.csv`), csv, {
+            flag: 'w+',
+            encoding: 'utf8',
+          });
         }
-
-        this.executeCommand(simulacaoID, 'cd ./simulator && ./AEDES_Acoplado');
-
-        return 'Simulação iniciada';
-      } catch (e) {
-        //Caso dê algum erro, vai remover a simulação da fila de execução
-        queuesExecutions.pop();
-
-        this.replaceColumn(simulacaoID, 'status', 'ERROR');
-
-        this.logger.error('Algum erro ocorreu ao executar uma simulação');
-        this.logger.error(e);
-        throw new HttpException(
-          'Erro ao criar pasta da simulação',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
       }
+
+      this.executeCommand(simulacaoID, 'cd ./simulator && ./AEDES_Acoplado');
+
+      return 'Simulação iniciada';
+    } catch (e) {
+      //Caso dê algum erro, vai remover a simulação da fila de execução
+      queuesExecutions.pop();
+
+      this.replaceColumn(simulacaoID, 'status', 'ERROR');
+
+      this.logger.error('Algum erro ocorreu ao executar uma simulação');
+      this.logger.error(e);
+      throw new HttpException(
+        'Erro ao criar pasta da simulação',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -290,6 +289,9 @@ export class SimulacaoService {
   ): Promise<number[][] | number[]> {
     const simulacao = await this.getSimulacaoByID(simulacaoID);
 
+    const parameters = await this.baseService.getParameters(
+      simulacao.base.parametersID.toString(),
+    );
     if (!simulacao) {
       throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
     }
@@ -312,9 +314,7 @@ export class SimulacaoService {
       //Vai buscar os dados originais dos agentes
       //Pega a partir da estrutura da doença
       const whereNeedFind: Array<any> =
-        simulacao.base.parameters[structure.defaultSearch[0]][
-          structure.defaultSearch[1]
-        ];
+        parameters[structure.defaultSearch[0]][structure.defaultSearch[1]];
 
       //Vai adicionar um campo para achar os agentes (index de cada um)
       let resultsSimulation: DatasProps[] = simulacao.result.map((resul) =>

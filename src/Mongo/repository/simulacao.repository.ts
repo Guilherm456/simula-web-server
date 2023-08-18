@@ -88,21 +88,7 @@ export class SimulacaoRepository {
   }
 
   async getSimulacaoByID(ID: string): Promise<Simulacao> {
-    let simulation = await this.simulacaoModel
-      .findById(ID, { __v: false })
-      .exec();
-
-    simulation = simulation.toJSON();
-
-    const parameters = await this.readFile(simulation.base.parametersID as any);
-
-    return {
-      ...simulation,
-      base: {
-        parameters,
-        ...simulation.base,
-      } as any,
-    } as Simulacao;
+    return await this.simulacaoModel.findById(ID, { __v: false }).exec();
   }
 
   async getSimulacoesByBaseID(baseID: string): Promise<Simulacao[]> {

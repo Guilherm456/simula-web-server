@@ -31,11 +31,8 @@ export class BaseRepository {
 
   async getBaseByID(baseID: string): Promise<Base> {
     const base = await this.baseModel.findById(baseID, { __v: false }).exec();
-    const parameters = await this.readFile(base.parametersID.toString());
-    return {
-      ...base.toJSON(),
-      parameters,
-    } as Base;
+    delete base.parameters;
+    return base;
   }
 
   async readFile(id: string): Promise<any> {
@@ -82,21 +79,12 @@ export class BaseRepository {
   ): Promise<boolean> {
     await this.gridFSBucket.delete(new ObjectId(parameters));
 
-    const parametersID = await this.uploadFile(newBase.parameters);
-
     delete newBase.parameters;
 
     await this.baseModel
-      .replaceOne(
-        { _id: baseID },
-        {
-          ...newBase,
-          parametersID,
-        },
-        {
-          new: true,
-        },
-      )
+      .replaceOne({ _id: baseID }, newBase, {
+        new: true,
+      })
       .exec();
 
     return true;

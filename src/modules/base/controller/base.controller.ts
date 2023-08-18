@@ -37,6 +37,13 @@ export class BaseController {
     return await this.baseService.getBases(query);
   }
 
+  @Get('/parameters/:parametersID')
+  async getParametersByBase(
+    @Param('parametersID') parametersID: string,
+  ): Promise<object> {
+    return await this.baseService.getParameters(parametersID);
+  }
+
   //Retorna todas as estruturas
   @Get('/structures')
   getAllStructures(): StructuresInterface[] {

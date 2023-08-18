@@ -101,6 +101,10 @@ export class BaseService {
     return await this.baseRepository.getBases(query);
   }
 
+  async getParameters(parametersID: string): Promise<object> {
+    return await this.baseRepository.readFile(parametersID);
+  }
+
   getAllStructures(): StructuresInterface[] {
     return [DengueStructure, TesteStructure];
   }
