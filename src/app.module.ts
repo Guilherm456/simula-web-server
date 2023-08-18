@@ -25,7 +25,8 @@ import { SimulacaoModule } from './modules/simulacao/simulacao.module';
     CacheModule.register({
       isGlobal: true,
       max: 15,
-      ttl: 60,
+
+      ttl: 60 * 1000,
     }),
   ],
   controllers: [],

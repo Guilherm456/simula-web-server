@@ -55,9 +55,13 @@ export const DengueStructure: StructuresInterface = {
 export const TesteStructure: StructuresInterface = {
   name: 'TESTE123',
   states: [],
-  lengthParams: 1,
+  lengthParams: 5,
   type_parameters: {
     a: [],
+    b: [],
+    c: [],
+    d: [],
+    e: [],
   },
   defaultSearch: ['aa', 'aaa'],
   outputFolder: 'teste_files/',

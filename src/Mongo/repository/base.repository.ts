@@ -65,7 +65,7 @@ export class BaseRepository {
   async saveBase(baseDTO: BaseDTO): Promise<Base> {
     const { parameters } = baseDTO;
 
-    const parametersID = (await this.uploadFile(parameters)) as any;
+    const parametersID = await this.uploadFile(parameters);
 
     delete baseDTO.parameters;
     const base = new this.baseModel({
@@ -82,7 +82,7 @@ export class BaseRepository {
   ): Promise<boolean> {
     await this.gridFSBucket.delete(new ObjectId(parameters));
 
-    const parametersID = (await this.uploadFile(newBase.parameters)) as any;
+    const parametersID = await this.uploadFile(newBase.parameters);
 
     delete newBase.parameters;
 
