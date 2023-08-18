@@ -6,7 +6,9 @@ export const SimulacaoSchema = new Schema({
   name: String,
   city: [Number],
   base: BaseSchema,
-  progress: Number,
+  // baseID: String,
+  // type: String,
+  // parametersID: String,
   status: String,
   result: [[DataResultSchema]],
 });

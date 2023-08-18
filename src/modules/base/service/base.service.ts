@@ -146,7 +146,7 @@ export class BaseService {
   async getBaseByID(baseID: string): Promise<Base> {
     const base = await this.baseRepository.getBaseByID(baseID);
 
-    if (!!base)
+    if (!base)
       throw new HttpException(
         'Nenhuma base encontrada com esse ID',
         HttpStatus.NOT_FOUND,

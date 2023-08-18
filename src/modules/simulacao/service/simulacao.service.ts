@@ -3,7 +3,6 @@ import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 
 import * as csvConverter from 'csvjson-json2csv';
 import { mkdirSync, writeFileSync } from 'fs';
-import path from 'path';
 import { SimulacaoDTO, SimulacaoDTOEdit } from 'src/DTO/simulacao.dto';
 import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 import {
@@ -15,7 +14,7 @@ import { SimulacaoRepository } from 'src/Mongo/repository/simulacao.repository';
 import { LoggerServer } from 'src/loggerServer';
 import { BaseService } from 'src/modules/base/service/base.service';
 const queuesExecutions = [];
-
+const path = require('path');
 // proc execution information
 export interface ProcessExecution {
   id: string;
@@ -114,10 +113,7 @@ export class SimulacaoService {
       );
     } else {
       //Consegue o endereço da pasta da simulação
-      const folderExec = path.join(
-        path.resolve(`output/${structure.outputFolder}/`),
-        `${simulacaoID}/`,
-      );
+      const folderExec = path.resolve(`output/${structure.outputFolder}/`);
 
       try {
         //Vai criar a pasta da simulação
@@ -128,6 +124,8 @@ export class SimulacaoService {
         for (const name of names) {
           const names_param = Object.keys(structure.type_parameters[name]);
           const actualDir = path.join(folderExec, name);
+
+          this.logger.log(`Criando pasta ${actualDir}`);
 
           if (names_param.length) {
             mkdirSync(actualDir, { recursive: true });
@@ -145,7 +143,9 @@ export class SimulacaoService {
             const csv = csvConverter(simulacao.base.parameters[name], {
               separator: ';',
             });
-            writeFileSync(path.join(actualDir, `${name}.csv`), csv);
+            writeFileSync(path.join(folderExec, `${name}.csv`), csv, {
+              flag: 'w+',
+            });
           }
         }
 
@@ -154,7 +154,7 @@ export class SimulacaoService {
         // const id = await this.executeCommand(simulacaoID, command);
         // this.logger.log(`Execution started with id: ${id}`);
 
-        return simulacao;
+        return 'Simulação iniciada';
       } catch (e) {
         //Caso dê algum erro, vai remover a simulação da fila de execução
         queuesExecutions.pop();
@@ -167,22 +167,6 @@ export class SimulacaoService {
       }
     }
   }
-
-  // async getSimulacaoStatus(simulacaoID: string): Promise<ProcessExecution> {
-  //   try {
-  //     const execution = await this.getExecutionStatus(simulacaoID);
-  //     return execution;
-  //   } catch (error) {
-  //     this.logger.error(
-  //       'An error occurred during fetching the execution status',
-  //     );
-  //     this.logger.error(error.message);
-  //     throw new HttpException(
-  //       'Error during fetching execution status',
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //     );
-  //   }
-  // }
 
   async saveSimulacao(
     simulacao: SimulacaoDTO,
@@ -230,8 +214,8 @@ export class SimulacaoService {
     }
 
     if (
-      simulacao.status === 'PENDING' ||
-      this.executions_queue.includes(simulacaoID)
+      simulacao.status === 'RUNNING'
+      // || this.executions_queue.includes(simulacaoID)
     ) {
       throw new HttpException(
         'Simulação já está em execução',
@@ -241,8 +225,7 @@ export class SimulacaoService {
       this.executions_queue.push(simulacaoID);
 
       if (this.executions_queue.length === 1) {
-        this.executeSimulacao(simulacaoID);
-        return 'Execução da simulacao iniciada';
+        return await this.executeSimulacao(simulacaoID);
       } else return 'Simulação adicionada na fila de execução';
     }
   }
