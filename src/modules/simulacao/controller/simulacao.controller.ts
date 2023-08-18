@@ -6,19 +6,16 @@ import {
   Param,
   Patch,
   Post,
-  UseInterceptors,
 } from '@nestjs/common';
 
 import { FindDTO } from 'src/DTO/agentsFind.tdo';
 import { SimulacaoDTO, SimulacaoDTOEdit } from 'src/DTO/simulacao.dto';
 
-import { CacheInterceptor } from '@nestjs/cache-manager';
 import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 
 @Controller('simulacao')
-@UseInterceptors(CacheInterceptor)
 export class SimulacaoController {
   constructor(private readonly simulacaoService: SimulacaoService) {}
 

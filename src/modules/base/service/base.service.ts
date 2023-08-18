@@ -41,22 +41,21 @@ export class BaseService {
     name: string,
   ) {
     if (files === undefined || files.length === 0) {
-      this.logger.error('Inviado arquivos inválidos ou nenhum arquivo enviado');
-      return new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
+      this.logger.error('Enviado arquivos inválidos ou nenhum arquivo enviado');
+      throw new HttpException('No files uploaded', HttpStatus.BAD_REQUEST);
     }
 
     structure = structure.toLowerCase();
 
     const structureObject = this.getStructureByName(structure);
-    this.logger.log(`Estrutura encontrada: ${structureObject.name}`);
     if (!structureObject)
-      return new HttpException(
+      throw new HttpException(
         'Estrutura não encontrada',
         HttpStatus.BAD_REQUEST,
       );
 
     if (structureObject.lengthParams !== files.length)
-      return new HttpException(
+      throw new HttpException(
         'Número de arquivos enviados é diferente que o necessário para esta simulação',
         HttpStatus.BAD_REQUEST,
       );
@@ -75,9 +74,10 @@ export class BaseService {
     for (let i = 0; i < params.length; i++) {
       const param = params[i];
       const subParams = Object.keys(structureObject.type_parameters[param]);
-      if (subParams.length === 0) {
+
+      if (subParams.length === 0)
         structureFinal.parameters[param] = this.convertJSON(files[i]);
-      } else {
+      else {
         for (const subParam of subParams) {
           structureFinal.parameters[param][subParam] = this.convertJSON(
             files[i],
@@ -86,10 +86,11 @@ export class BaseService {
         }
       }
     }
+
     try {
       return await this.baseRepository.saveBase(structureFinal);
     } catch (e) {
-      return new HttpException(
+      throw new HttpException(
         `Erro ao salvar a base ${e}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );

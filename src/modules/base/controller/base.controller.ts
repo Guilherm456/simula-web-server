@@ -22,33 +22,15 @@ import {
   StructuresInterface,
 } from 'src/Mongo/Interface/structures.interface';
 
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { LoggerServer } from 'src/loggerServer';
 import { FilterDTO } from 'src/Mongo/Interface/query.interface';
-//Filtro para verificar se é arquivos CSV
-//DESATIVADO TEMPORARIAMENTE
-const CSVFilter = (
-  req: Express.Request,
-  file: Express.Multer.File,
-  callback: any,
-) => {
-  //Verifica se é arquivos CSV, caso não seja, aponta o erro ao usuário
-  if (file.mimetype !== 'text/csv')
-    return callback(
-      new HttpException(
-        'Apenas arquivos CSV são permitidos!',
-        HttpStatus.BAD_REQUEST,
-      ),
-      false,
-    );
-
-  //Caso seja, retorna nenhum erro (permitindo o arquivo)
-  return callback(null, true);
-};
 
 @Controller('base')
-@UseInterceptors(CacheInterceptor)
 export class BaseController {
-  constructor(private readonly baseService: BaseService) {}
+  constructor(
+    private readonly baseService: BaseService,
+    private readonly logger: LoggerServer,
+  ) {}
 
   @Get()
   async getAllBase(@Query() query: FilterDTO): Promise<Base[]> {
@@ -107,7 +89,20 @@ export class BaseController {
   @Post('/files/:structure/:name')
   @UseInterceptors(
     FilesInterceptor('files', undefined, {
-      // fileFilter: CSVFilter,
+      fileFilter: (req, file, callback) => {
+        //Verifica se é arquivos CSV, caso não seja, aponta o erro ao usuário
+        if (file.mimetype !== 'text/csv')
+          return callback(
+            new HttpException(
+              'Apenas arquivos CSV são permitidos!',
+              HttpStatus.BAD_REQUEST,
+            ),
+            true,
+          );
+
+        //Caso seja, retorna nenhum erro (permitindo o arquivo)
+        return callback(null, true);
+      },
     }),
   )
 
