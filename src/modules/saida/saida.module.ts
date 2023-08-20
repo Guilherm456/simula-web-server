@@ -10,6 +10,7 @@ import { SaidaSchema } from 'src/Mongo/Schemas/saida.schema';
   imports: [MongooseModule.forFeature([{ name: 'saida', schema: SaidaSchema }])],
   controllers: [SaidaController],
   providers: [SaidaService, SaidaRepository, LoggerServer],
+  exports: [SaidaService],
 })
 export class SaidaModule {}
 

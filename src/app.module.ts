@@ -7,6 +7,7 @@ import { AppServerModule } from './modules/app-server/app-server.module';
 import { BaseModule } from './modules/base/base.module';
 import { SimulacaoModule } from './modules/simulacao/simulacao.module';
 import { SaidaModule } from './modules/saida/saida.module';
+import { VisualizacaoModule } from './modules/visualizacao/visualizacao.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SaidaModule } from './modules/saida/saida.module';
       ttl: 60 * 1000,
     }),
     SaidaModule,
+    VisualizacaoModule,
   ],
   controllers: [],
   providers: [],

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel, InjectConnection } from '@nestjs/mongoose';
-import { Model, Connection } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model } from 'mongoose';
 import { Readable } from 'stream';
 import { GridFSBucket, ObjectId } from 'mongodb';
 
@@ -65,12 +65,30 @@ export class SaidaRepository {
     }
   }
 
+  async getSaidasBySimulationID(simulationId: string): Promise<Saida[]> {
+    try {
+      const saidas = await this.saidaModel.find({ simulationId }).exec();
+      for (const saida of saidas) {
+        if (saida && saida.data) {
+          const fileData = await this.readFile(saida.data.toString());
+          saida.data = fileData;
+        }
+      }
+      return saidas;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get saidas by simulationId: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
   async saveSaida(simulationId: string, data: object): Promise<Saida> {
     try {
       const fileId = await this.uploadFile(data);
       const saida = new this.saidaModel({
         simulationId,
-        data: fileId // Store the GridFS file ID instead of raw data
+        data: fileId,
       });
       return await saida.save();
     } catch (error) {
@@ -82,7 +100,15 @@ export class SaidaRepository {
   async updateSaida(id: string, newData: object): Promise<Saida> {
     try {
       const fileId = await this.uploadFile(newData);
-      return await this.saidaModel.findByIdAndUpdate(id, { data: fileId }, { new: true }).exec();
+      return await this.saidaModel
+        .findByIdAndUpdate(
+          id,
+          { data: fileId },
+          {
+            new: true,
+          },
+        )
+        .exec();
     } catch (error) {
       this.logger.error(`Failed to update saida: ${error.message}`);
       throw error;
