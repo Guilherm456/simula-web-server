@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { SaidaRepository } from '../../../Mongo/repository/saida.repository';
-import { SaidaDTO } from '../../../DTO/saida.dto';
-import { LoggerServer } from 'src/loggerServer';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as Papa from 'papaparse';
+import * as path from 'path';
+import { LoggerServer } from 'src/loggerServer';
+import { SaidaDTO } from '../../../DTO/saida.dto';
+import { SaidaRepository } from '../../../Mongo/repository/saida.repository';
 
 @Injectable()
 export class SaidaService {
@@ -13,19 +13,21 @@ export class SaidaService {
     private readonly logger: LoggerServer,
   ) {}
 
-  async saveParsedData(
-    simulationId: string,
-    parsedData: object,
-  ): Promise<SaidaDTO> {
+  async saveParsedData(simulationId: string): Promise<SaidaDTO> {
+    const data = await this.parseDirectory(`./simulator/Saidas/MonteCarlo_0/`);
     const saidaDto = new SaidaDTO();
 
+    this.logger.log(`Data has been parsed!`);
+
     saidaDto.simulationId = simulationId;
-    saidaDto.data = parsedData;
+    saidaDto.data = data;
 
     const savedSaida = await this.saidaRepository.saveSaida(
       saidaDto.simulationId,
       saidaDto.data,
     );
+
+    this.logger.log(`Data parsed and saved successfully!`);
 
     return {
       simulationId: savedSaida.simulationId.toString(), // convert ObjectId to string

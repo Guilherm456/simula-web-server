@@ -13,6 +13,7 @@ import {
 import { SimulacaoRepository } from 'src/Mongo/repository/simulacao.repository';
 import { LoggerServer } from 'src/loggerServer';
 import { BaseService } from 'src/modules/base/service/base.service';
+import { SaidaService } from 'src/modules/saida/service/saida.service';
 
 const queuesExecutions = [];
 const path = require('path');
@@ -27,6 +28,7 @@ export interface ProcessExecution {
 export class SimulacaoService {
   constructor(
     private readonly simulacaoRepository: SimulacaoRepository,
+    private readonly saidaService: SaidaService,
     private readonly baseService: BaseService,
     private readonly logger: LoggerServer,
   ) {}
@@ -86,6 +88,7 @@ export class SimulacaoService {
         }
 
         this.replaceColumn(simulationId, 'status', 'FINISHED');
+        this.saidaService.saveParsedData(simulationId);
       });
 
       resolve(id);
