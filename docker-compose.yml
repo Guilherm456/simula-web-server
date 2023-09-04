@@ -49,11 +49,6 @@ services:
     networks:
       - simula
 
-  # redis:
-  #   image: redis:6.2.6-alpine3.14
-  #   networks:
-  #     - simula
-
 networks:
   simula:
     name: simula
