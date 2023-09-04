@@ -4,7 +4,6 @@ import { GridFSBucket, ObjectId } from 'mongodb';
 import { Connection, Model } from 'mongoose';
 
 import { BaseDTO } from 'src/DTO/base.dto';
-import { LoggerServer } from 'src/loggerServer';
 import { Readable } from 'stream';
 import { Base } from '../Interface/base.interface';
 import { FilterDTO } from '../Interface/query.interface';
@@ -15,7 +14,6 @@ export class BaseRepository {
   constructor(
     @InjectModel('base') private readonly baseModel: Model<Base>,
     @InjectConnection() private readonly connection: Connection,
-    private readonly logger: LoggerServer,
   ) {
     this.gridFSBucket = new GridFSBucket(this.connection.db as any, {
       bucketName: 'parameters',

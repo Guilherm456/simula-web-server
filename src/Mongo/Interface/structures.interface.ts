@@ -10,8 +10,11 @@ export interface StructuresInterface {
 
   //Nome da pasta onde está os binários da simulação
   outputFolder: string;
+  resultsFolder: string;
 
   lengthParams: number;
+
+  executeCommand: string;
 }
 interface StateInterface {
   name: string;

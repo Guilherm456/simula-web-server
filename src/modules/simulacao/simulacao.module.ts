@@ -7,13 +7,11 @@ import { LoggerServer } from 'src/loggerServer';
 import { SimulacaoController } from 'src/modules/simulacao/controller/simulacao.controller';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 import { BaseModule } from '../base/base.module';
-import { SaidaModule } from '../saida/saida.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: 'simulacao', schema: SimulacaoSchema }]),
     BaseModule,
-    SaidaModule,
   ],
   controllers: [SimulacaoController],
   providers: [SimulacaoService, SimulacaoRepository, BaseModule, LoggerServer],

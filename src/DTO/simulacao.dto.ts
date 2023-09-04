@@ -23,7 +23,7 @@ export class SimulacaoDTO {
   city: number[];
 }
 
-export class SimulacaoDTOEdit extends SimulacaoDTO {
+export class SimulacaoEditDTO extends SimulacaoDTO {
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
   @Type(() => DengueStructureDTO || InfluenzaStructureDTO)

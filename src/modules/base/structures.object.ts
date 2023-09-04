@@ -49,6 +49,8 @@ export const DengueStructure: StructuresInterface = {
   },
   defaultSearch: ['aa', 'aaa'],
   outputFolder: 'dengue/',
+  resultsFolder: '/Saidas/',
+  executeCommand: './AEDES_Acoplado',
 };
 
 //APENAS PARA TESTE
@@ -65,4 +67,6 @@ export const TesteStructure: StructuresInterface = {
   },
   defaultSearch: ['aa', 'aaa'],
   outputFolder: 'teste_files/',
+  executeCommand: 'echo "teste"',
+  resultsFolder: '/Saidas/',
 };

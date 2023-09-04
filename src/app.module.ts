@@ -5,8 +5,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
 import { AppServerModule } from './modules/app-server/app-server.module';
 import { BaseModule } from './modules/base/base.module';
-import { SimulacaoModule } from './modules/simulacao/simulacao.module';
+import { ParametersModule } from './modules/parameters/parameters.module';
 import { SaidaModule } from './modules/saida/saida.module';
+import { SimulacaoModule } from './modules/simulacao/simulacao.module';
 import { VisualizacaoModule } from './modules/visualizacao/visualizacao.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { VisualizacaoModule } from './modules/visualizacao/visualizacao.module';
     }),
     SaidaModule,
     VisualizacaoModule,
+    ParametersModule,
   ],
   controllers: [],
   providers: [],

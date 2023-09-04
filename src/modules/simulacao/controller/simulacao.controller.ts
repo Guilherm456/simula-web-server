@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { FindDTO } from 'src/DTO/agentsFind.tdo';
-import { SimulacaoDTO, SimulacaoDTOEdit } from 'src/DTO/simulacao.dto';
+import { SimulacaoDTO, SimulacaoEditDTO } from 'src/DTO/simulacao.dto';
 
 import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
@@ -26,26 +26,21 @@ export class SimulacaoController {
 
   @Get(':ID')
   async getSimulacaoByID(@Param('ID') ID: string): Promise<Simulacao> {
-    return await this.simulacaoService.getSimulacaoByID(ID);
+    return await this.simulacaoService.getSimulationsByID(ID);
   }
 
   @Get('/status/:status')
   async getSimulacoesByStatus(
     @Param('status') status: string,
   ): Promise<Simulacao[]> {
-    return await this.simulacaoService.getSimulacoesByStatus(status);
+    return await this.simulacaoService.getSimulationsByStatus(status);
   }
 
   @Get('/base/:baseID')
   async getSimulacoesByBaseID(
     @Param('baseID') baseID: string,
   ): Promise<Simulacao[]> {
-    return await this.simulacaoService.getSimulacoesByBaseID(baseID);
-  }
-
-  @Post('/:simulacaoID/execute')
-  async executeSimulacao(@Param('simulacaoID') simulacaoID: string) {
-    return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
+    return await this.simulacaoService.getSimulationsByBaseID(baseID);
   }
 
   @Post('/:simulacaoID/findAgents')
@@ -61,15 +56,15 @@ export class SimulacaoController {
     @Body() simulacao: SimulacaoDTO,
     @Param('baseID') baseID: string,
   ): Promise<Simulacao> {
-    return await this.simulacaoService.saveSimulacao(simulacao, baseID);
+    return await this.simulacaoService.saveSimulation(simulacao, baseID);
   }
 
   @Patch(':simulacaoID')
   async updateSimulacao(
     @Param('simulacaoID') simulacaoID: string,
-    @Body() newSimulacao: SimulacaoDTOEdit,
+    @Body() newSimulacao: SimulacaoEditDTO,
   ): Promise<Simulacao> {
-    return await this.simulacaoService.updateSimulacao(
+    return await this.simulacaoService.updateSimulations(
       simulacaoID,
       newSimulacao,
     );
@@ -77,6 +72,6 @@ export class SimulacaoController {
 
   @Delete(':simulacaoID')
   async deleteSimulacao(@Param('simulacaoID') simulacaoID: string) {
-    return await this.simulacaoService.deleteSimulacao(simulacaoID);
+    return await this.simulacaoService.deleteSimulations(simulacaoID);
   }
 }
