@@ -6,4 +6,3 @@ export interface Saida extends Document {
   simulationId: mongoose.Schema.Types.ObjectId;
   data: object;
 }
-
