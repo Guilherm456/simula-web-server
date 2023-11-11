@@ -1,0 +1,21 @@
+name: 'Build test'
+on: push
+  pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build
+        uses: actions/checkout@v2
+
+      - name: Set up NodeJS
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build

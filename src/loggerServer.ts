@@ -4,25 +4,25 @@ import { appendFileSync, existsSync, statSync, unlinkSync } from 'fs';
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'log';
 
 export class LoggerServer extends ConsoleLogger {
-  log(message: string) {
+  log(message: string | string[], context?: string) {
     this.saveInFile(message, 'log');
-    super.log(message);
+    super.log(message, context);
   }
-  error(message: string, trace?: string) {
+  error(message: string | string[], context?: string) {
     this.saveInFile(message, 'error');
-    super.error(message);
+    super.error(message, context);
   }
-  warn(message: string) {
+  warn(message: string | string[], context?: string) {
     this.saveInFile(message, 'warn');
-    super.warn(message);
+    super.warn(message, context);
   }
-  debug(message: string) {
+  debug(message: string | string[], context?: string) {
     this.saveInFile(message, 'debug');
-    super.debug(message);
+    super.debug(message, context);
   }
 
   //Função para salvar logs no arquivo
-  saveInFile(message: string, type: LogLevel) {
+  saveInFile(message: string | string[], type: LogLevel) {
     const file = `${__dirname}/log.txt`;
     if (existsSync(file)) {
       const size = statSync(file).size;

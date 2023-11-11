@@ -1,28 +1,181 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 
-import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
+import { mkdirSync, writeFileSync } from 'fs';
+import * as Papa from 'papaparse';
+import { SimulacaoDTO, SimulacaoDTOEdit } from 'src/DTO/simulacao.dto';
+import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 import {
   DatasProps,
   SearchsProps,
   Simulacao,
 } from 'src/Mongo/Interface/simulacao.interface';
 import { SimulacaoRepository } from 'src/Mongo/repository/simulacao.repository';
-import { BaseService } from 'src/modules/base/service/base.service';
-
 import { LoggerServer } from 'src/loggerServer';
-
-import { writeFileSync, mkdirSync } from 'fs';
+import { BaseService } from 'src/modules/base/service/base.service';
+import { SaidaService } from 'src/modules/saida/service/saida.service';
 
 const queuesExecutions = [];
-
 const path = require('path');
+
+export interface ProcessExecution {
+  id: string;
+  process: ChildProcessWithoutNullStreams;
+  output?: string;
+}
+
 @Injectable()
 export class SimulacaoService {
   constructor(
     private readonly simulacaoRepository: SimulacaoRepository,
+    private readonly saidaService: SaidaService,
     private readonly baseService: BaseService,
     private readonly logger: LoggerServer,
   ) {}
+
+  private executions_queue: string[] = [];
+
+  async replaceColumn(simulacaoID: string, nameColumn: string, newValue: any) {
+    try {
+      return await this.simulacaoRepository.replaceColumn(
+        simulacaoID,
+        nameColumn,
+        newValue,
+      );
+    } catch {
+      throw new HttpException(
+        'Erro ao atualizar a simulação',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private generateExecutionId(): string {
+    return Date.now().toString();
+  }
+
+  async executeCommand(simulationId: string, command: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const childProc = spawn(`${command}`, { shell: true });
+      const id = this.generateExecutionId();
+
+      this.replaceColumn(simulationId, 'status', 'RUNNING');
+
+      childProc.stdout.on('data', (data) => {
+        const message = `${data.toString()}`;
+        this.logger.log(message, id);
+      });
+
+      childProc.stderr.on('data', (data) => {
+        const message = `${data.toString()}`;
+        this.logger.error(message, id);
+      });
+
+      childProc.on('error', (error) => {
+        this.logger.error(`${error.message}`, id);
+        this.replaceColumn(simulationId, 'status', 'ERROR');
+        reject(error);
+      });
+
+      childProc.on('close', (code) => {
+        if (code !== 0) {
+          // If there is an error, remove the process from the executions map
+          this.executeNext();
+          const message = `Process exited with code ${code}`;
+          this.logger.error(`[${id}] ${message}`);
+          this.replaceColumn(simulationId, 'status', 'ERROR');
+          reject(new Error(message));
+        }
+
+        this.replaceColumn(simulationId, 'status', 'FINISHED');
+        this.saidaService.saveParsedData(simulationId);
+      });
+
+      resolve(id);
+    });
+  }
+
+  private executeNext() {
+    this.executions_queue.shift();
+    if (this.executions_queue.length > 0) {
+      this.executeSimulacao(this.executions_queue[0]);
+    }
+  }
+
+  async executeSimulacao(simulacaoID: string) {
+    const simulacao = await this.getSimulacaoByID(simulacaoID);
+    //Vai buscar a estrutura da base
+    const structure = await this.baseService.getStructureByID(
+      simulacao.base._id.toString(),
+    );
+
+    if (structure == undefined) {
+      throw new HttpException(
+        'Tipo de estrutura não encontrada',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const parameters = await this.baseService.getParameters(
+      simulacao.base.parametersID.toString(),
+    );
+    //Consegue o endereço da pasta da simulação
+    const folderExec = path.resolve(`output/${structure.outputFolder}/`);
+
+    this.logger.log(
+      `Criando pasta da simulação ${simulacao.name} na pasta ${folderExec}`,
+    );
+
+    try {
+      //Vai criar a pasta da simulação
+      mkdirSync(folderExec, { recursive: true });
+
+      const names = Object.keys(structure.type_parameters);
+
+      for (const name of names) {
+        const names_param = Object.keys(structure.type_parameters[name]);
+        const actualDir = path.join(folderExec, name);
+
+        if (names_param.length) {
+          mkdirSync(actualDir, { recursive: true });
+          for (const name_param of names_param) {
+            const csv = Papa.unparse(parameters[name][name_param], {
+              delimiter: ';',
+              quotes: false,
+            });
+
+            writeFileSync(path.join(actualDir, `${name_param}.csv`), csv);
+          }
+        } else {
+          const csv = Papa.unparse(parameters[name], {
+            delimiter: ';',
+            quotes: false,
+          });
+
+          writeFileSync(path.join(folderExec, `${name}.csv`), csv, {
+            flag: 'w+',
+            encoding: 'utf8',
+          });
+        }
+      }
+
+      this.executeCommand(simulacaoID, 'cd ./simulator && ./AEDES_Acoplado');
+
+      return 'Simulação iniciada';
+    } catch (e) {
+      //Caso dê algum erro, vai remover a simulação da fila de execução
+      queuesExecutions.pop();
+
+      this.replaceColumn(simulacaoID, 'status', 'ERROR');
+
+      this.logger.error('Algum erro ocorreu ao executar uma simulação');
+      this.logger.error(e);
+      throw new HttpException(
+        'Erro ao criar pasta da simulação',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   async saveSimulacao(
     simulacao: SimulacaoDTO,
@@ -34,143 +187,56 @@ export class SimulacaoService {
     } else throw new HttpException('Base não encontrada', HttpStatus.NOT_FOUND);
   }
 
-  async getAllSimulacoes(): Promise<Simulacao[]> {
-    return await this.simulacaoRepository.getAllSimulacoes();
+  async getSimulatons(query?: FilterDTO): Promise<Simulacao[]> {
+    return await this.simulacaoRepository.getSimulations(query);
   }
 
   async getSimulacaoByID(ID: string): Promise<Simulacao> {
     const simulacao = await this.simulacaoRepository.getSimulacaoByID(ID);
-    if (!simulacao)
+    if (!simulacao) {
       throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
-    else return simulacao;
+    } else return simulacao;
   }
 
   async getSimulacoesByStatus(status: string): Promise<Simulacao[]> {
-    switch (status) {
-      case 'new':
-        return await this.simulacaoRepository.getSimulacoesByStatus({ $eq: 0 });
-      case 'running':
-        return await this.simulacaoRepository.getSimulacoesByStatus({
-          $gte: 1,
-          $lt: 100,
-        });
-      case 'finished':
-        return await this.simulacaoRepository.getSimulacoesByStatus({
-          $gte: 100,
-        });
-      default:
-        throw new HttpException('Status inválido', HttpStatus.NOT_ACCEPTABLE);
+    enum StatusEnum {
+      'new' = 'PENDING',
+      'running' = 'RUNNING',
+      'finished' = 'FINISHED',
+      'error' = 'ERROR',
     }
+
+    const statusEnum = StatusEnum[status];
+
+    if (!statusEnum) {
+      throw new HttpException('Status não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.simulacaoRepository.getSimulacoesByStatus(statusEnum);
   }
 
   async addExecuteSimulacao(simulacaoID: string) {
-    this.logger.warn('Adicionando nova simulação na fila de execução');
     const simulacao = await this.getSimulacaoByID(simulacaoID);
-    if (!simulacao) return;
-    this.fakeData(simulacao);
-    // if (!queuesExecutions.includes(simulacaoID)) {
-    //   queuesExecutions.push(simulacaoID);
-    //   if (queuesExecutions.length == 1) {
-    //     return await this.executeSimulacao(simulacaoID);
-    //   }
-    //   //Vai passar o tanto de simulações que estão a ser executadas
-    //   return queuesExecutions.length;
-    // } else return 'Simulação já está na fila de execução';
-  }
 
-  async fakeData(simulacao: Simulacao) {
-    const data: DatasProps[] = [];
-    const fakeCiclos = Math.random() * 150;
-
-    const agensNum = 190;
-    const estados = this.baseService.getStatesByBase(
-      simulacao.base._id.toString(),
-    );
-    for (let j = 0; j < fakeCiclos; j++) {
-      const tempData = [];
-      for (let i = 0; i < agensNum; i++) {
-        let stateN = Math.floor(Math.random() * (await estados).length);
-        let isNegativeX = Math.floor(Math.random() * 2);
-        let isNegativeY = Math.floor(Math.random() * 2);
-
-        const max = 0.07;
-        tempData.push({
-          codName: `Agente ${i}`,
-          state: stateN,
-          coord: {
-            lat:
-              isNegativeX == 0
-                ? simulacao.city[0] + Math.random() * max
-                : simulacao.city[0] - Math.random() * max,
-            lng:
-              isNegativeY == 0
-                ? simulacao.city[1] + Math.random() * max
-                : simulacao.city[1] - Math.random() * max,
-          },
-        });
-      }
-      data.push(tempData);
+    if (!simulacao) {
+      throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
     }
-    await this.simulacaoRepository.executeSimulacao(
-      simulacao._id.toString(),
-      data,
-    );
-    this.logger.log('Simulação executada');
-  }
 
-  async executeSimulacao(simulacaoID: string) {
-    const simulacao = await this.getSimulacaoByID(simulacaoID);
-
-    //Vai buscar a estrutura da base
-    const structure = await this.baseService.getStructureByID(
-      simulacao.base._id.toString(),
-    );
-
-    if (structure == undefined)
+    if (
+      simulacao.status === 'RUNNING' ||
+      this.executions_queue.includes(simulacaoID)
+    ) {
       throw new HttpException(
-        'Tipo de estrutura não encontrada',
-        HttpStatus.NOT_FOUND,
+        'Simulação já está em execução',
+        HttpStatus.BAD_REQUEST,
       );
-    else {
-      //Consegue o endereço da pasta da simulação
-      const folderExec = path.join(
-        path.resolve('lib/simulacao/'),
-        `${simulacaoID}/`,
-      );
+    } else {
+      this.executions_queue.push(simulacaoID);
 
-      try {
-        //Vai criar a pasta da simulação
-        mkdirSync(folderExec, { recursive: true });
-
-        const names = Object.keys(structure.type_parameters);
-
-        for (let i of names) {
-          const names_param = Object.keys(structure.type_parameters[i]);
-          const atualDir = path.join(folderExec, i);
-          mkdirSync(atualDir, { recursive: true });
-
-          for (let j of names_param) {
-            //função temporária para testar
-            writeFileSync(
-              path.join(atualDir, `${j}.csv`),
-              JSON.stringify(structure.type_parameters[i][j].map((x) => x)),
-              {
-                encoding: 'utf-8',
-                flag: 'w+',
-              },
-            );
-          }
-        }
-
-        return true;
-      } catch (e) {
-        this.logger.error('Algum erro ocorreu ao executar uma simulação');
-        this.logger.error(e);
-        throw new HttpException(
-          'Erro ao criar pasta da simulação',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      if (this.executions_queue.length === 1) {
+        this.executeSimulacao(simulacaoID);
+        return 'Simulação iniciada';
+      } else return 'Simulação adicionada na fila de execução';
     }
   }
 
@@ -180,25 +246,34 @@ export class SimulacaoService {
 
   async updateSimulacao(
     simulacaoID: string,
-    newSimulacao: SimulacaoDTO,
+    newSimulacao: SimulacaoDTOEdit,
   ): Promise<Simulacao> {
-    const simulacaoOld = await this.simulacaoRepository.getSimulacaoByID(
-      simulacaoID,
-    );
-    if (!simulacaoOld)
-      throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
+    try {
+      const simulacaoOld =
+        await this.simulacaoRepository.getSimulacaoByID(simulacaoID);
+      if (!simulacaoOld) {
+        throw new HttpException(
+          'Simulação não encontrada',
+          HttpStatus.NOT_FOUND,
+        );
+      }
 
-    return await this.simulacaoRepository.updateSimulacao(
-      simulacaoID,
-      newSimulacao,
-    );
+      return await this.simulacaoRepository.updateSimulacao(
+        simulacaoID,
+        newSimulacao,
+      );
+    } catch (e) {
+      throw new HttpException(
+        'Erro ao atualizar simulação',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async deleteSimulacao(simulacaoID: string): Promise<Simulacao> {
     try {
-      const simulacaoDeleted = await this.simulacaoRepository.deleteSimulacao(
-        simulacaoID,
-      );
+      const simulacaoDeleted =
+        await this.simulacaoRepository.deleteSimulacao(simulacaoID);
       this.logger.warn(`Base deletada: ${simulacaoDeleted.name}`);
       return simulacaoDeleted;
     } catch (e) {
@@ -217,16 +292,21 @@ export class SimulacaoService {
   ): Promise<number[][] | number[]> {
     const simulacao = await this.getSimulacaoByID(simulacaoID);
 
-    if (!simulacao)
+    const parameters = await this.baseService.getParameters(
+      simulacao.base.parametersID.toString(),
+    );
+    if (!simulacao) {
       throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
+    }
     const structure = await this.baseService.getStructureByID(
       simulacao.base._id.toString(),
     );
-    if (!structure)
+    if (!structure) {
       throw new HttpException(
         'Tipo de estrutura não encontrada',
         HttpStatus.NOT_FOUND,
       );
+    }
 
     if (!agents.stateAgent && agents.propertiesAgent.length === 0) {
       return [];
@@ -236,10 +316,8 @@ export class SimulacaoService {
 
       //Vai buscar os dados originais dos agentes
       //Pega a partir da estrutura da doença
-      const whereNeedFind: Array<Object> =
-        simulacao.base.parameters[structure.defaultSearch[0]][
-          structure.defaultSearch[1]
-        ];
+      const whereNeedFind: Array<any> =
+        parameters[structure.defaultSearch[0]][structure.defaultSearch[1]];
 
       //Vai adicionar um campo para achar os agentes (index de cada um)
       let resultsSimulation: DatasProps[] = simulacao.result.map((resul) =>
@@ -253,7 +331,7 @@ export class SimulacaoService {
 
       //Busca pelas propriedades dos agentes
       if (agents.propertiesAgent && agents.propertiesAgent.length > 0) {
-        let indexFound = [];
+        const indexFound = [];
 
         //Vai buscar em todas caracteristicas dos agentes
         for (let i = 0; i < whereNeedFind.length; i++) {
@@ -274,11 +352,11 @@ export class SimulacaoService {
         }
 
         //Caso tenha achado algum agente
-        if (indexFound.length > 0)
+        if (indexFound.length > 0) {
           resultsSimulation = resultsSimulation.map((agents, i) =>
             agents.filter((a) => indexFound.includes(a.index)),
           );
-        else return [];
+        } else return [];
       }
 
       //Vai buscar os agentes pelo estado

@@ -1,0 +1,65 @@
+[
+  {
+    "arguments": [
+      "/opt/cuda/bin/nvcc",
+      "-ccbin",
+      "/usr/bin/gcc-11",
+      "-std=c++14",
+      "-Wno-deprecated-gpu-targets",
+      "-Xcompiler",
+      "-fopenmp",
+      "-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP",
+      "-dc",
+      "-I.",
+      "-c",
+      "-o",
+      "Fontes/Humanos/Humanos.o",
+      "Fontes/Humanos/Humanos.cu"
+    ],
+    "directory": "/mnt/files/data/documents/cc/tcc/impl/simulator",
+    "file": "/mnt/files/data/documents/cc/tcc/impl/simulator/Fontes/Humanos/Humanos.cu",
+    "output": "/mnt/files/data/documents/cc/tcc/impl/simulator/Fontes/Humanos/Humanos.o"
+  },
+  {
+    "arguments": [
+      "/opt/cuda/bin/nvcc",
+      "-ccbin",
+      "/usr/bin/gcc-11",
+      "-std=c++14",
+      "-Wno-deprecated-gpu-targets",
+      "-Xcompiler",
+      "-fopenmp",
+      "-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP",
+      "-dc",
+      "-I.",
+      "-c",
+      "-o",
+      "Fontes/Simulacao.o",
+      "Fontes/Simulacao.cu"
+    ],
+    "directory": "/mnt/files/data/documents/cc/tcc/impl/simulator",
+    "file": "/mnt/files/data/documents/cc/tcc/impl/simulator/Fontes/Simulacao.cu",
+    "output": "/mnt/files/data/documents/cc/tcc/impl/simulator/Fontes/Simulacao.o"
+  },
+  {
+    "arguments": [
+      "/opt/cuda/bin/nvcc",
+      "-ccbin",
+      "/usr/bin/gcc-11",
+      "-std=c++14",
+      "-Wno-deprecated-gpu-targets",
+      "-Xcompiler",
+      "-fopenmp",
+      "-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP",
+      "-dc",
+      "-I.",
+      "-c",
+      "-o",
+      "Fontes/Mosquitos/Mosquitos.o",
+      "Fontes/Mosquitos/Mosquitos.cu"
+    ],
+    "directory": "/mnt/files/data/documents/cc/tcc/impl/simulator",
+    "file": "/mnt/files/data/documents/cc/tcc/impl/simulator/Fontes/Mosquitos/Mosquitos.cu",
+    "output": "/mnt/files/data/documents/cc/tcc/impl/simulator/Fontes/Mosquitos/Mosquitos.o"
+  }
+]

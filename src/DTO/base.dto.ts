@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   IsNotEmpty,
   IsNotEmptyObject,
@@ -5,8 +6,9 @@ import {
   Length,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
+import { Types } from 'src/Mongo/Interface/types.inteface';
+import { DengueStructureDTO } from './dengue.base.dto';
 import { InfluenzaStructureDTO } from './influenza.base.dto';
 
 export class BaseDTO {
@@ -14,13 +16,12 @@ export class BaseDTO {
   @IsString()
   @Length(3, 50)
   name: string;
-
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  @Type(() => InfluenzaStructureDTO)
-  parameters: InfluenzaStructureDTO;
+  @Type(() => DengueStructureDTO || InfluenzaStructureDTO)
+  parameters: DengueStructureDTO | InfluenzaStructureDTO;
 
   @IsNotEmpty()
   @IsString()
-  type: 'influenza';
+  type: Types;
 }

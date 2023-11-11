@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  backend:
-    build: .
-    entrypoint: .docker/entrypoint.sh
-    volumes:
-      - .:/home/node/app
-    ports:
-      - 3000:3000
-    expose:
-      - 3000:3000
-    depends_on:
-      - mongodb
-    networks:
-      - simula
-    container_name: backend
-    external_links:
-    - client
+  # backend:
+  #   build: .
+  #   entrypoint: .docker/entrypoint.sh
+  #   volumes:
+  #     - .:/home/node/app
+  #   ports:
+  #     - 3000:3000
+  #   expose:
+  #     - 3000:3000
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - simula
+  #   container_name: backend
+  #   external_links:
+  #   - client
 
   mongodb:
     image: mongo:latest
@@ -34,7 +34,8 @@ services:
     restart: always
 
   mongo-express:
-    image: mongo-express:0.54.0
+    image: mongo-express:latest
+    container_name: mongo-express
     ports:
       - 8081:8081
     environment:
@@ -57,3 +58,4 @@ networks:
   simula:
     name: simula
     driver: bridge
+    external: true

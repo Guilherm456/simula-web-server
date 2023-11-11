@@ -8,9 +8,10 @@ import {
   Post,
 } from '@nestjs/common';
 
-import { SimulacaoDTO } from 'src/DTO/simulacao.dto';
 import { FindDTO } from 'src/DTO/agentsFind.tdo';
+import { SimulacaoDTO, SimulacaoDTOEdit } from 'src/DTO/simulacao.dto';
 
+import { FilterDTO } from 'src/Mongo/Interface/query.interface';
 import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 
@@ -19,8 +20,8 @@ export class SimulacaoController {
   constructor(private readonly simulacaoService: SimulacaoService) {}
 
   @Get()
-  async getAllSimulacoes(): Promise<Simulacao[]> {
-    return await this.simulacaoService.getAllSimulacoes();
+  async getSimulations(query?: FilterDTO): Promise<Simulacao[]> {
+    return await this.simulacaoService.getSimulatons(query);
   }
 
   @Get(':ID')
@@ -66,7 +67,7 @@ export class SimulacaoController {
   @Patch(':simulacaoID')
   async updateSimulacao(
     @Param('simulacaoID') simulacaoID: string,
-    @Body() newSimulacao: SimulacaoDTO,
+    @Body() newSimulacao: SimulacaoDTOEdit,
   ): Promise<Simulacao> {
     return await this.simulacaoService.updateSimulacao(
       simulacaoID,
