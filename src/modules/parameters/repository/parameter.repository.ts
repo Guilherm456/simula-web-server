@@ -38,4 +38,22 @@ export class ParametersRepository {
     stream.pipe(uploadStream);
     return uploadStream.id.toString() as string;
   }
+
+  async deleteFile(id: string): Promise<void> {
+    await this.gridFSBucket.delete(new ObjectId(id));
+  }
+
+  async updateFile(id: string, parameters: object): Promise<string> {
+    const uploadStream = this.gridFSBucket.openUploadStreamWithId(
+      new ObjectId(id),
+      `parameters-${randomUUID()}.json`,
+    );
+
+    const stream = new Readable();
+    stream.push(JSON.stringify(parameters));
+    stream.push(null);
+
+    stream.pipe(uploadStream);
+    return uploadStream.id.toString() as string;
+  }
 }
