@@ -1,12 +1,12 @@
+import { ParametersModule } from '@modules/parameters/parameters.module';
+import { StructureModule } from '@modules/structure/structure.module';
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { BaseSchema } from 'src/Mongo/Schemas/base.schemas';
-import { BaseRepository } from 'src/Mongo/repository/base.repository';
 import { LoggerServer } from 'src/loggerServer';
-import { BaseController } from 'src/modules/base/controller/base.controller';
-import { BaseService } from 'src/modules/base/service/base.service';
-import { ParametersModule } from '../parameters/parameters.module';
-import { StructureModule } from '../structure/structure.module';
+import { BaseRepository } from './base.repository';
+import { BaseController } from './controller/base.controller';
+import { BaseSchema } from './interfaces/base.schemas';
+import { BaseService } from './service/base.service';
 
 @Module({
   imports: [
