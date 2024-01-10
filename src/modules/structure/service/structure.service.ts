@@ -1,67 +1,38 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  forwardRef,
-} from '@nestjs/common';
-import {
-  StatesInterface,
-  StructuresInterface,
-} from 'src/Mongo/Interface/structures.interface';
-import { BaseService } from 'src/modules/base/service/base.service';
-import {
-  DengueStructure,
-  TesteStructure,
-} from 'src/modules/base/structures.object';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { FilterDTO } from 'src/interfaces';
+import { StructureDTO } from '../entities/DTO/structure.dto';
+import { Structure } from '../entities/structures.interface';
+import { StructureRepository } from '../structure.repository';
 
 @Injectable()
 export class StructureService {
-  constructor(
-    @Inject(forwardRef(() => BaseService))
-    private readonly baseService: BaseService,
-  ) {}
+  constructor(private readonly structureRepository: StructureRepository) {}
 
-  getAllStructures(): StructuresInterface[] {
-    return [DengueStructure, TesteStructure];
+  async getAll(FilterDTO?: FilterDTO) {
+    return await this.structureRepository.getAllStructures(FilterDTO);
   }
 
-  getStructureByName(structureName: string): StructuresInterface {
-    const structures = this.getAllStructures();
-    const structure = structures.find(
-      (elemm) => elemm.name.toLowerCase() === structureName.toLowerCase(),
-    );
-    if (!structure) {
-      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
-    } else return structure;
+  async getByID(structureID: string) {
+    return await this.structureRepository.getByID(structureID);
   }
 
-  async getStructureByID(baseID: string): Promise<StructuresInterface> {
-    const base = await this.baseService.getBaseByID(baseID);
-    if (!base)
+  async create(structure: StructureDTO) {
+    let lengthParams = 0;
+    Object.keys(structure.parameters).forEach((key) => {
+      if (typeof structure.parameters[key] !== 'object') lengthParams++;
+      else lengthParams += Object.keys(structure.parameters[key]).length + 1;
+    });
+
+    try {
+      return await this.structureRepository.create({
+        ...structure,
+        lengthParams,
+      } as unknown as Structure);
+    } catch (err) {
       throw new HttpException(
-        'Nenhuma base encontrada com esse ID',
-        HttpStatus.NOT_FOUND,
+        'Erro ao criar estrutura, verifique os dados e tente novamente. ' + err,
+        HttpStatus.BAD_REQUEST,
       );
-    const structure = this.getAllStructures().find(
-      (elem) => elem.name.toLowerCase() === base.type.toLowerCase(),
-    );
-    if (structure === undefined)
-      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
-    else return structure;
-  }
-
-  getStatesByStructure(name: string): StatesInterface {
-    const structure = this.getStructureByName(name);
-    if (!structure) return [];
-    return structure.states;
-  }
-
-  async getStatesByBase(baseID: string): Promise<StatesInterface> {
-    const structure = await this.getStructureByID(baseID);
-    if (!structure) {
-      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
     }
-    return this.getStatesByStructure(structure.name);
   }
 }
