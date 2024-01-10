@@ -5,13 +5,15 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bull';
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
+import { RolesGuard } from './middleware/user.guard';
+import { JwtDecodeMiddleware } from './middleware/user.middleware';
 import { AppServerModule } from './modules/app-server/app-server.module';
 import { BaseModule } from './modules/base/base.module';
 import { ParametersModule } from './modules/parameters/parameters.module';
 import { SaidaModule } from './modules/saida/saida.module';
 import { SimulacaoModule } from './modules/simulacao/simulacao.module';
 import { SimulatorModule } from './modules/simulator/simulator.module';
-import { RolesGuard } from './modules/users/user.guard';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -32,8 +34,7 @@ import { UsersModule } from './modules/users/users.module';
     AppServerModule,
     CacheModule.register({
       isGlobal: true,
-      max: 15,
-
+      max: 1000,
       ttl: 60 * 1000,
     }),
     SaidaModule,
@@ -46,6 +47,7 @@ import { UsersModule } from './modules/users/users.module';
         port: +process.env.REDIS_PORT,
       },
     }),
+    ScheduleModule.forRoot(),
   ],
 
   controllers: [],
@@ -56,4 +58,8 @@ import { UsersModule } from './modules/users/users.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer) {
+    consumer.apply(JwtDecodeMiddleware).forRoutes('*');
+  }
+}

@@ -4,19 +4,19 @@ import { appendFileSync, existsSync, statSync, unlinkSync } from 'fs';
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'log';
 
 export class LoggerServer extends ConsoleLogger {
-  log(message: string | string[], context?: string) {
+  log(message: string | string[], context: string = '') {
     this.saveInFile(message, 'log');
     super.log(message, context);
   }
-  error(message: string | string[], context?: string) {
+  error(message: string | string[], context: string = '') {
     this.saveInFile(message, 'error');
     super.error(message, context);
   }
-  warn(message: string | string[], context?: string) {
+  warn(message: string | string[], context: string = '') {
     this.saveInFile(message, 'warn');
     super.warn(message, context);
   }
-  debug(message: string | string[], context?: string) {
+  debug(message: string | string[], context: string = '') {
     this.saveInFile(message, 'debug');
     super.debug(message, context);
   }
