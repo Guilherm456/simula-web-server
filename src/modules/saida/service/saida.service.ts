@@ -1,59 +1,98 @@
+import { ParametersService } from '@modules/parameters/services/parameters.service';
+import { Simulacao } from '@modules/simulacao/interface/simulacao.interface';
 import { Injectable } from '@nestjs/common';
-import * as fs from 'fs';
+import { createReadStream, readdirSync, statSync } from 'fs';
 import * as Papa from 'papaparse';
-import * as path from 'path';
+import { join, resolve } from 'path';
 import { LoggerServer } from 'src/loggerServer';
+import { StructureService } from 'src/modules/structure/service/structure.service';
 import { SaidaDTO } from '../../../DTO/saida.dto';
-import { SaidaRepository } from '../../../Mongo/repository/saida.repository';
+import { Output } from '../interface/output.interface';
+import { SaidaRepository } from '../saida.repository';
 
 @Injectable()
 export class SaidaService {
   constructor(
     private readonly saidaRepository: SaidaRepository,
     private readonly logger: LoggerServer,
+    private readonly structureService: StructureService,
+    private readonly parametersService: ParametersService,
   ) {}
 
-  async saveParsedData(simulationId: string): Promise<SaidaDTO> {
-    const data = await this.parseDirectory(`./simulator/Saidas/MonteCarlo_0/`);
-    const saidaDto = new SaidaDTO();
+  async saveParsedData(simulation: Simulacao): Promise<SaidaDTO> {
+    const simulationID = simulation._id.toString();
+
+    this.logger.log(
+      `Coletando dados resultantes da simulação ${simulationID}...`,
+    );
+
+    const structure = await this.structureService.getByID(
+      simulation.structure.toString(),
+    );
+
+    if (!structure) throw new Error('Structure not found');
+
+    const outputObject = {} as Output;
 
     this.logger.log(`Data has been parsed!`);
 
-    saidaDto.simulationId = simulationId;
-    saidaDto.data = data;
+    outputObject.simulationId = simulationID;
+    outputObject.structure = structure;
 
-    const savedSaida = await this.saidaRepository.saveSaida(
-      saidaDto.simulationId,
-      saidaDto.data,
+    const data = await this.parseDirectory(
+      resolve(`output/${structure.folder}/${structure.resultsFolder || ''}`),
     );
 
-    this.logger.log(`Data parsed and saved successfully!`);
+    outputObject.data = data;
 
-    return {
-      simulationId: savedSaida.simulationId.toString(), // convert ObjectId to string
-      data: savedSaida.data,
-    };
+    const agentsStats = structure.agents.map((agent) => ({
+      agent,
+      stats: agent.onData(outputObject.data, agent),
+    }));
+
+    outputObject.agentsStats = agentsStats;
+
+    try {
+      outputObject.data = await this.parametersService.uploadAllParameters(
+        outputObject.data,
+      );
+
+      const savedSaida = await this.saidaRepository.saveSaida(outputObject);
+
+      this.logger.log(`Data parsed and saved successfully!`);
+
+      return {
+        simulationId: savedSaida.simulationId.toString(), // convert ObjectId to string
+        data: savedSaida.data,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Algum erro ocorreu ao salvar as saídas da simulação ${simulation._id}: ${error.message}`,
+      );
+      throw error;
+    }
   }
 
   async parseDirectory(dir: string): Promise<any> {
     const data = {};
 
-    const files = fs.readdirSync(dir);
+    const files = readdirSync(dir);
     for (const file of files) {
-      const fullPath = path.join(dir, file);
-      if (fs.statSync(fullPath).isDirectory()) {
+      const fullPath = join(dir, file);
+      if (statSync(fullPath).isDirectory()) {
         data[file] = await this.parseDirectory(fullPath);
       } else {
         data[file] = await this.parseCSV(fullPath);
       }
     }
+
     return data;
   }
 
   async parseCSV(filePath: string): Promise<number[][]> {
     return new Promise((resolve, reject) => {
       const data: number[][] = [];
-      Papa.parse(fs.createReadStream(filePath, 'utf-8'), {
+      Papa.parse(createReadStream(filePath, 'utf-8'), {
         skipEmptyLines: true,
         delimiter: ';',
         dynamicTyping: true,

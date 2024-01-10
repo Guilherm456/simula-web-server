@@ -5,7 +5,6 @@ import {
   HttpException,
   HttpStatus,
   Param,
-  Post,
 } from '@nestjs/common';
 import { LoggerServer } from 'src/loggerServer';
 import { SaidaService } from '../service/saida.service';
@@ -16,13 +15,6 @@ export class SaidaController {
     private readonly saidaService: SaidaService,
     private readonly logger: LoggerServer,
   ) {}
-
-  @Post('parse/:simulationId')
-  async parseAndSave(@Param('simulationId') simulationId: string) {
-    const savedData = await this.saidaService.saveParsedData(simulationId);
-
-    return { message: 'Data parsed and saved successfully!', data: savedData };
-  }
 
   @Get(':simulationId')
   async getSaidasBySimulationId(@Param('simulationId') simulationId: string) {
