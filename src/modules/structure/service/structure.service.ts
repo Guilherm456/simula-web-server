@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import {
   StatesInterface,
   StructuresInterface,
@@ -11,7 +17,10 @@ import {
 
 @Injectable()
 export class StructureService {
-  constructor(private readonly baseService: BaseService) {}
+  constructor(
+    @Inject(forwardRef(() => BaseService))
+    private readonly baseService: BaseService,
+  ) {}
 
   getAllStructures(): StructuresInterface[] {
     return [DengueStructure, TesteStructure];

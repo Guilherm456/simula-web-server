@@ -1,92 +1,88 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { mkdirSync, writeFileSync } from 'fs';
-import path from 'path';
+import path, { resolve } from 'path';
 import { LoggerServer } from 'src/loggerServer';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 
 import { spawn } from 'child_process';
-import { randomUUID } from 'crypto';
 
-import * as Papa from 'papaparse';
+import { InjectQueue, Process, Processor } from '@nestjs/bull';
+import { Job, Queue } from 'bull';
+import { unparse } from 'papaparse';
 import { StructureService } from 'src/modules/structure/service/structure.service';
+import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
 
 @Injectable()
+@Processor('simulator')
 export class SimulatorService {
   constructor(
     private readonly simulacaoService: SimulacaoService,
     private readonly structureService: StructureService,
     private readonly logger: LoggerServer,
+    @InjectQueue('simulator') private readonly simulatorQueue: Queue,
   ) {}
-  private executions_queue: string[] = [];
 
   async sendToQueue(simulationID: string) {
     const simulacao =
-      await this.simulacaoService.getSimulationsByID(simulationID);
+      await this.simulacaoService.getSimulationByID(simulationID);
 
     if (!simulacao) {
       throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
     }
 
-    if (
-      simulacao.status === 'RUNNING' ||
-      this.executions_queue.includes(simulationID)
-    ) {
+    if (false) {
       throw new HttpException(
         'Simulação já está em execução',
         HttpStatus.BAD_REQUEST,
       );
     } else {
-      this.executions_queue.push(simulationID);
+      this.simulatorQueue.add(simulacao, {
+        jobId: simulationID,
+      });
 
-      if (this.executions_queue.length === 1) {
-        this.executeSimulacao(simulationID);
-        return { message: 'Simulação iniciada' };
-      } else
-        return {
-          message: 'Simulação adicionada na fila de execução',
-          queueSize: this.executions_queue.length,
-        };
+      this.logger.log(
+        `Adicionando simulação ${simulationID} na fila de execução`,
+      );
+      return { message: 'Simulação adicionada na fila de execução' };
     }
   }
 
-  async executeSimulacao(simulacaoID: string) {
-    const simulacao =
-      await this.simulacaoService.getSimulationsByID(simulacaoID);
-    //Vai buscar a estrutura da base
+  @Process()
+  async executeSimulacao(job: Job) {
+    const simulacao = job.data as Simulacao;
+
     const structure = await this.structureService.getStructureByID(
       simulacao.base._id.toString(),
     );
-    if (!structure) {
+
+    if (!structure)
       throw new HttpException(
         'Tipo de estrutura não encontrada',
         HttpStatus.NOT_FOUND,
       );
-    }
 
-    const parameters = await this.structureService.getParameters(
-      simulacao.base.parametersID.toString(),
-    );
-    //Consegue o endereço da pasta da simulação
-    const folderExec = path.resolve(`output/${structure.outputFolder}/`);
+    const parameters = {};
+
+    const folderExec = resolve(`output/${structure.outputFolder}/`);
 
     this.logger.log(
       `Criando pasta da simulação ${simulacao.name} na pasta ${folderExec}`,
     );
 
     try {
-      //Vai criar a pasta da simulação
       mkdirSync(folderExec, { recursive: true });
 
       const names = Object.keys(structure.type_parameters);
 
       for (const name of names) {
         const names_param = Object.keys(structure.type_parameters[name]);
+
         const actualDir = path.join(folderExec, name);
 
         if (names_param.length) {
           mkdirSync(actualDir, { recursive: true });
           for (const name_param of names_param) {
-            const csv = Papa.unparse(parameters[name][name_param], {
+            const csv = unparse(parameters[name][name_param], {
               delimiter: ';',
               quotes: false,
             });
@@ -94,7 +90,7 @@ export class SimulatorService {
             writeFileSync(path.join(actualDir, `${name_param}.csv`), csv);
           }
         } else {
-          const csv = Papa.unparse(parameters[name], {
+          const csv = unparse(parameters[name], {
             delimiter: ';',
             quotes: false,
           });
@@ -106,12 +102,16 @@ export class SimulatorService {
         }
       }
 
-      this.executeCommand(simulacaoID, structure.executeCommand);
+      await this.executeCommand(
+        simulacao._id.toString(),
+        `cd ${folderExec} && ${structure.executeCommand} `,
+      );
     } catch (e) {
-      //Caso dê algum erro, vai remover a simulação da fila de execução
-      this.executeNext();
-
-      this.simulacaoService.replaceColumn(simulacaoID, 'status', 'ERROR');
+      this.simulacaoService.replaceColumn(
+        simulacao._id.toString(),
+        'status',
+        'ERROR',
+      );
       this.logger.error('Algum erro ocorreu ao executar uma simulação');
       this.logger.error(e);
       throw new HttpException(
@@ -121,51 +121,45 @@ export class SimulatorService {
     }
   }
 
-  async executeCommand(simulationId: string, command: string): Promise<string> {
+  async executeCommand(simulationId: string, command: string) {
     return new Promise((resolve, reject) => {
-      spawn(`cd ./output/${1}`, { shell: true });
       const childProc = spawn(`${command}`, { shell: true });
-      const id = randomUUID();
 
       this.simulacaoService.replaceColumn(simulationId, 'status', 'RUNNING');
 
       childProc.stdout.on('data', (data) => {
         const message = `${data.toString()}`;
-        this.logger.log(message, id);
+        this.logger.log(message, simulationId);
       });
 
       childProc.stderr.on('data', (data) => {
         const message = `${data.toString()}`;
-        this.logger.error(message, id);
+        this.logger.error(message, simulationId);
       });
 
       childProc.on('error', (error) => {
-        this.logger.error(`${error.message}`, id);
+        this.logger.error(`${error.message}`, simulationId);
         this.simulacaoService.replaceColumn(simulationId, 'status', 'ERROR');
-        reject(error);
+        reject(new Error(error.message));
       });
 
       childProc.on('close', (code) => {
-        this.executeNext();
         if (code !== 0) {
           const message = `Process exited with code ${code}`;
-          this.logger.error(`[${id}] ${message}`);
+          this.logger.error(`[${simulationId}] ${message}`);
           this.simulacaoService.replaceColumn(simulationId, 'status', 'ERROR');
           reject(new Error(message));
+        } else {
+          this.simulacaoService.replaceColumn(
+            simulationId,
+            'status',
+            'FINISHED',
+          );
+
+          // this.saidaService.saveParsedData(simulationId);
+          resolve(simulationId);
         }
-
-        this.simulacaoService.replaceColumn(simulationId, 'status', 'FINISHED');
-        // this.saidaService.saveParsedData(simulationId);
       });
-
-      resolve(id);
     });
-  }
-
-  private async executeNext() {
-    if (this.executions_queue.length > 0) {
-      this.executeSimulacao(this.executions_queue[0]);
-      this.executions_queue.shift();
-    }
   }
 }

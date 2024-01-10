@@ -17,10 +17,6 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { BaseDTO } from 'src/DTO/base.dto';
 import { BaseService } from 'src/modules/base/service/base.service';
 import { Base } from 'src/Mongo/Interface/base.interface';
-import {
-  StatesInterface,
-  StructuresInterface,
-} from 'src/Mongo/Interface/structures.interface';
 
 import { LoggerServer } from 'src/loggerServer';
 import { FilterDTO } from 'src/Mongo/Interface/query.interface';
@@ -35,49 +31,6 @@ export class BaseController {
   @Get()
   async getAllBase(@Query() query: FilterDTO): Promise<Base[]> {
     return await this.baseService.getBases(query);
-  }
-
-  @Get('/parameters/:parametersID')
-  async getParametersByBase(
-    @Param('parametersID') parametersID: string,
-  ): Promise<object> {
-    return await this.baseService.getParameters(parametersID);
-  }
-
-  //Retorna todas as estruturas
-  @Get('/structures')
-  getAllStructures(): StructuresInterface[] {
-    return this.baseService.getAllStructures();
-  }
-
-  @Get('/:baseID/structures')
-  async getStructureFromBase(
-    @Param('baseID') baseID: string,
-  ): Promise<StructuresInterface> {
-    return this.baseService.getStructureByID(baseID);
-  }
-
-  //Responsável por buscar uma estrutura pelo nome da mesma
-  @Get('/structures/:nameStructure')
-  getStructureByName(
-    @Param('nameStructure') nameStructure: string,
-  ): StructuresInterface | [] {
-    return this.baseService.getStructureByName(nameStructure);
-  }
-
-  @Get('/:baseID/states')
-  async getStatesByBase(
-    @Param('baseID') baseID: string,
-  ): Promise<StatesInterface> {
-    return this.baseService.getStatesByBase(baseID);
-  }
-
-  //Repassa os estados que os agentes podem ter em uma determinada estrutura
-  @Get('/structures/:nameStructure/states')
-  getStatesByStructure(
-    @Param('nameStructure') nameStructure: string,
-  ): StatesInterface {
-    return this.baseService.getStatesByStructure(nameStructure);
   }
 
   //Verifica alguma base pelo ID

@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   ArrayNotEmpty,
@@ -5,7 +6,6 @@ import {
   IsNotEmptyObject,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 /*
 AMB
@@ -28,21 +28,21 @@ class Ambiente {
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  AMB: any[] | String;
+  AMB: any[] | string;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  CON: any[] | String;
+  CON: any[] | string;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  DistribuicaoHumano: any[] | String;
+  DistribuicaoHumano: any[] | string;
 }
 
 class Humanos {
@@ -51,28 +51,28 @@ class Humanos {
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  INI: any[] | String;
+  INI: any[] | string;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  MOV: any[] | String;
+  MOV: any[] | string;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  CON: any[] | String;
+  CON: any[] | string;
 
   @IsArray()
   @ArrayNotEmpty()
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  TRA: any[] | String;
+  TRA: any[] | string;
 }
 
 class Simulacao {
@@ -81,7 +81,7 @@ class Simulacao {
   @ArrayMinSize(1)
   @IsNotEmptyObject({}, { each: true })
   @ValidateNested({ each: true })
-  SIM: any[] | String;
+  SIM: any[] | string;
 }
 
 export class InfluenzaStructureDTO {
@@ -99,4 +99,9 @@ export class InfluenzaStructureDTO {
   @Type(() => Simulacao)
   @ValidateNested({ each: true })
   Simulacao: Simulacao;
+}
+
+export class Teste123DTO {
+  @IsNotEmptyObject()
+  a: [];
 }

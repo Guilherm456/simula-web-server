@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { LoggerServer } from 'src/loggerServer';
 
 import { BaseDTO } from 'src/DTO/base.dto';
@@ -6,21 +12,18 @@ import { BaseDTO } from 'src/DTO/base.dto';
 import * as csvConverter from 'csvjson-csv2json';
 import { Base } from 'src/Mongo/Interface/base.interface';
 import { FilterDTO } from 'src/Mongo/Interface/query.interface';
-import {
-  StatesInterface,
-  StructuresInterface,
-} from 'src/Mongo/Interface/structures.interface';
 import { BaseRepository } from 'src/Mongo/repository/base.repository';
-import {
-  DengueStructure,
-  TesteStructure,
-} from 'src/modules/base/structures.object';
+import { ParametersService } from 'src/modules/parameters/services/parameters.service';
+import { StructureService } from 'src/modules/structure/service/structure.service';
 
 @Injectable()
 export class BaseService {
   constructor(
     private readonly baseRepository: BaseRepository,
     private readonly logger: LoggerServer,
+    private readonly parametersService: ParametersService,
+    @Inject(forwardRef(() => StructureService))
+    private readonly structureService: StructureService,
   ) {}
 
   convertJSON(file: Express.Multer.File) {
@@ -47,7 +50,7 @@ export class BaseService {
 
     structure = structure.toLowerCase();
 
-    const structureObject = this.getStructureByName(structure);
+    const structureObject = this.structureService.getStructureByName(structure);
     if (!structureObject)
       throw new HttpException(
         'Estrutura não encontrada',
@@ -101,53 +104,6 @@ export class BaseService {
     return await this.baseRepository.getBases(query);
   }
 
-  async getParameters(parametersID: string): Promise<object> {
-    return await this.baseRepository.readFile(parametersID);
-  }
-
-  getAllStructures(): StructuresInterface[] {
-    return [DengueStructure, TesteStructure];
-  }
-
-  getStructureByName(structureName: string): StructuresInterface {
-    const structures = this.getAllStructures();
-    const structure = structures.find(
-      (elemm) => elemm.name.toLowerCase() === structureName.toLowerCase(),
-    );
-    if (!structure) {
-      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
-    } else return structure;
-  }
-
-  async getStructureByID(baseID: string): Promise<StructuresInterface> {
-    const base = await this.baseRepository.getBaseByID(baseID);
-    if (!base)
-      throw new HttpException(
-        'Nenhuma base encontrada com esse ID',
-        HttpStatus.NOT_FOUND,
-      );
-    const structure = this.getAllStructures().find(
-      (elem) => elem.name.toLowerCase() === base.type.toLowerCase(),
-    );
-    if (structure === undefined)
-      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
-    else return structure;
-  }
-
-  getStatesByStructure(name: string): StatesInterface {
-    const structure = this.getStructureByName(name);
-    if (!structure) return [];
-    return structure.states;
-  }
-
-  async getStatesByBase(baseID: string): Promise<StatesInterface> {
-    const structure = await this.getStructureByID(baseID);
-    if (!structure) {
-      throw new HttpException('Estrutura não encontrada', HttpStatus.NOT_FOUND);
-    }
-    return this.getStatesByStructure(structure.name);
-  }
-
   async getBaseByID(baseID: string): Promise<Base> {
     const base = await this.baseRepository.getBaseByID(baseID);
 
@@ -160,8 +116,14 @@ export class BaseService {
     return base;
   }
 
-  async saveBase(newBase: BaseDTO): Promise<Base> {
-    return await this.baseRepository.saveBase(newBase);
+  async saveBase({ parameters, ...base }: BaseDTO): Promise<Base> {
+    const parametersObject =
+      await this.parametersService.uploadAllParameters(parameters);
+
+    return await this.baseRepository.saveBase({
+      ...base,
+      parameters: parametersObject,
+    });
   }
 
   async updateBase(baseID: string, newBase: BaseDTO): Promise<Base> {
@@ -173,7 +135,13 @@ export class BaseService {
           HttpStatus.NOT_FOUND,
         );
 
-      await this.baseRepository.updateBase(baseID, newBase, base.parametersID);
+      const parametersObject = await this.parametersService.uploadAllParameters(
+        newBase.parameters,
+      );
+      await this.baseRepository.updateBase(baseID, {
+        ...newBase,
+        parameters: parametersObject,
+      });
 
       this.logger.warn(`Base atualizada: ${newBase.name}`);
       return this.baseRepository.getBaseByID(baseID);
