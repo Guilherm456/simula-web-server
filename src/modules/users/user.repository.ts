@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { FilterDTO } from 'src/interfaces/query.interface';
-import { User, UserModel } from './entities/user.entity';
+import { User } from './entities/user.entity';
 @Injectable()
 export class UsersRepository {
-  constructor(@InjectModel('users') private readonly userModel: UserModel) {}
+  constructor(@InjectModel('users') private readonly userModel: Model<User>) {}
 
   async getUser(userID: string): Promise<User> {
     return await this.userModel.findById(userID).exec();
@@ -13,7 +14,7 @@ export class UsersRepository {
   async createUser(user: Omit<User, 'createdAt'>): Promise<User> {
     const newUser = new this.userModel({
       ...user,
-      createdAt: new Date().toISOString(),
+      // createdAt: new Date().toISOString(),
     });
     return await newUser.save();
   }

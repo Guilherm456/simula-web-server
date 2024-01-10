@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Document } from 'mongoose';
 
 export interface User {
   name: string;
@@ -12,6 +12,4 @@ export interface User {
 
 export type Roles = 'admin' | 'user' | 'guest';
 
-export interface UserDocument extends User, Document {}
-
-export type UserModel = Model<UserDocument>;
+export type UserDocument = User & Document;

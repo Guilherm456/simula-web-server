@@ -6,13 +6,18 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { MiddlewareRequest } from '@types';
 import { Public, Roles } from 'src/roles';
-import { LocalStrategy } from './auth.guard';
+import { LocalStrategy } from '../../middleware/auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDTO } from './dto/login.dto';
-import { RecoverPasswordDto } from './dto/recover-password.dto';
+import {
+  RecoverPasswordDto,
+  RecoverPasswordEmailDto,
+} from './dto/recover-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
@@ -43,16 +48,24 @@ export class UsersController {
     return await this.usersService.login(account);
   }
 
-  @Get('/recover-password/:email')
-  async recoverPassword(@Param('email') email: string) {
-    return await this.usersService.recoverPassword(email);
+  @Post('/recover-password')
+  @Public()
+  async recoverPassword(@Body() email: RecoverPasswordEmailDto) {
+    return await this.usersService.recoverPassword(email.email);
   }
 
-  @Post('/new-password/:token')
-  async newPassword(
-    @Param('token') token: string,
-    @Body() newPassword: RecoverPasswordDto,
-  ) {
-    return await this.usersService.newPassword(token, newPassword.newPassword);
+  @Post('/new-password')
+  @Public()
+  async newPassword(@Body() newPassword: RecoverPasswordDto) {
+    return await this.usersService.newPassword(
+      newPassword.token,
+      newPassword.newPassword,
+    );
+  }
+
+  @Get('/user')
+  @Roles('guest')
+  async getUser(@Req() req: MiddlewareRequest) {
+    return await this.usersService.getUser(req.user.id);
   }
 }

@@ -1,12 +1,29 @@
 import { Schema } from 'mongoose';
+import { User } from './user.entity';
 
-export const UserSchema = new Schema({
-  name: String,
-  email: String,
-  password: String,
-  role: String,
-  createdAt: String,
-  updatedAt: String,
+export const UserSchema = new Schema<User>({
+  name: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    unique: true,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'user', 'guest'],
+    default: 'user',
+  },
+  createdAt: {
+    type: String,
+    default: new Date().toISOString(),
+  },
 });
 
 UserSchema.pre('deleteOne', { document: true }, async function (next) {
@@ -21,5 +38,6 @@ UserSchema.pre('deleteOne', { document: true }, async function (next) {
       _id: user._id,
     },
   });
+
   next();
 });

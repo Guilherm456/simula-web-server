@@ -1,5 +1,6 @@
 import { MailerModule } from '@nestjs-modules/mailer';
-import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common'; // Import ModuleRef from @nestjs/common
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerServer } from 'src/loggerServer';
@@ -23,12 +24,15 @@ import { UsersService } from './users.service';
         },
       },
     }),
+    BullModule.registerQueue({
+      name: 'email',
+    }),
 
     JwtModule.register({
       global: true,
       secret: `${process.env.JWT_SECRET}`,
       signOptions: {
-        expiresIn: '1d',
+        expiresIn: '7d',
       },
     }),
   ],
