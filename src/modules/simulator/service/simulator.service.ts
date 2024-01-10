@@ -1,16 +1,18 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { mkdirSync, writeFileSync } from 'fs';
-import path, { resolve } from 'path';
+import { resolve } from 'path';
 import { LoggerServer } from 'src/loggerServer';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 
 import { spawn } from 'child_process';
 
+import { Simulacao } from '@modules/simulacao/interface/simulacao.interface';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
+import { mkdir, writeFile } from 'fs/promises';
 import { unparse } from 'papaparse';
+import { ParametersService } from 'src/modules/parameters/services/parameters.service';
+import { SaidaService } from 'src/modules/saida/service/saida.service';
 import { StructureService } from 'src/modules/structure/service/structure.service';
-import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
 
 @Injectable()
 @Processor('simulator')
@@ -19,6 +21,8 @@ export class SimulatorService {
     private readonly simulacaoService: SimulacaoService,
     private readonly structureService: StructureService,
     private readonly logger: LoggerServer,
+    private readonly saidaService: SaidaService,
+    private readonly parametersService: ParametersService,
     @InjectQueue('simulator') private readonly simulatorQueue: Queue,
   ) {}
 
@@ -30,7 +34,10 @@ export class SimulatorService {
       throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
     }
 
-    if (false) {
+    if (
+      (await this.simulatorQueue.getJob(simulationID)) ||
+      simulacao.status === 'RUNNING'
+    ) {
       throw new HttpException(
         'Simulação já está em execução',
         HttpStatus.BAD_REQUEST,
@@ -43,16 +50,29 @@ export class SimulatorService {
       this.logger.log(
         `Adicionando simulação ${simulationID} na fila de execução`,
       );
+
       return { message: 'Simulação adicionada na fila de execução' };
     }
   }
 
+  async creteFile(fileName: string, data: object) {
+    const csv = unparse(data as any, {
+      delimiter: ';',
+      quotes: false,
+    });
+
+    await writeFile(fileName, csv, {
+      flag: 'w+',
+      encoding: 'utf8',
+    });
+  }
+
   @Process()
   async executeSimulacao(job: Job) {
-    const simulacao = job.data as Simulacao;
+    const simulation = job.data as Simulacao;
 
-    const structure = await this.structureService.getStructureByID(
-      simulacao.base._id.toString(),
+    const structure = await this.structureService.getByID(
+      simulation.structure as string,
     );
 
     if (!structure)
@@ -61,59 +81,60 @@ export class SimulatorService {
         HttpStatus.NOT_FOUND,
       );
 
-    const parameters = {};
+    const parameters = await this.parametersService.getAllParameters(
+      simulation.parameters,
+    );
 
-    const folderExec = resolve(`output/${structure.outputFolder}/`);
+    const folderExec = resolve(`output/${structure.folder}`);
 
     this.logger.log(
-      `Criando pasta da simulação ${simulacao.name} na pasta ${folderExec}`,
+      `Criando pasta da simulação ${simulation.name} na pasta ${folderExec}`,
     );
 
     try {
-      mkdirSync(folderExec, { recursive: true });
+      const folderInput = `${folderExec}/${structure.inputsFolder || ''}`;
+      await mkdir(folderInput, { recursive: true });
+      const names = Object.keys(structure.parameters);
 
-      const names = Object.keys(structure.type_parameters);
+      await Promise.all(
+        names.map(async (name) => {
+          const names_param = Object.keys(structure.parameters[name]);
 
-      for (const name of names) {
-        const names_param = Object.keys(structure.type_parameters[name]);
+          if (names_param.length > 0) {
+            const actualDir = `${folderInput}/${name}`;
+            await mkdir(actualDir, { recursive: true });
 
-        const actualDir = path.join(folderExec, name);
-
-        if (names_param.length) {
-          mkdirSync(actualDir, { recursive: true });
-          for (const name_param of names_param) {
-            const csv = unparse(parameters[name][name_param], {
-              delimiter: ';',
-              quotes: false,
-            });
-
-            writeFileSync(path.join(actualDir, `${name_param}.csv`), csv);
-          }
-        } else {
-          const csv = unparse(parameters[name], {
-            delimiter: ';',
-            quotes: false,
-          });
-
-          writeFileSync(path.join(folderExec, `${name}.csv`), csv, {
-            flag: 'w+',
-            encoding: 'utf8',
-          });
-        }
-      }
+            await Promise.all(
+              names_param.map(async (name_param) => {
+                await this.creteFile(
+                  `${actualDir}/${name_param}.csv`,
+                  parameters[name][name_param],
+                );
+              }),
+            );
+          } else
+            await this.creteFile(
+              `${folderInput}/${name}.csv`,
+              parameters[name],
+            );
+        }),
+      );
 
       await this.executeCommand(
-        simulacao._id.toString(),
+        simulation,
         `cd ${folderExec} && ${structure.executeCommand} `,
       );
+      this.logger.log(`Simulação ${simulation.name} executada com sucesso!`);
     } catch (e) {
       this.simulacaoService.replaceColumn(
-        simulacao._id.toString(),
+        simulation._id.toString(),
         'status',
         'ERROR',
       );
-      this.logger.error('Algum erro ocorreu ao executar uma simulação');
-      this.logger.error(e);
+
+      this.logger.error(
+        `Algum erro ocorreu ao executar a simulação ${simulation.name}! Erro: ${e}`,
+      );
       throw new HttpException(
         'Erro ao criar pasta da simulação',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -121,7 +142,8 @@ export class SimulatorService {
     }
   }
 
-  async executeCommand(simulationId: string, command: string) {
+  async executeCommand(simulation: Simulacao, command: string) {
+    const simulationId = simulation._id.toString();
     return new Promise((resolve, reject) => {
       const childProc = spawn(`${command}`, { shell: true });
 
@@ -139,7 +161,6 @@ export class SimulatorService {
 
       childProc.on('error', (error) => {
         this.logger.error(`${error.message}`, simulationId);
-        this.simulacaoService.replaceColumn(simulationId, 'status', 'ERROR');
         reject(new Error(error.message));
       });
 
@@ -156,7 +177,7 @@ export class SimulatorService {
             'FINISHED',
           );
 
-          // this.saidaService.saveParsedData(simulationId);
+          this.saidaService.saveParsedData(simulation);
           resolve(simulationId);
         }
       });
