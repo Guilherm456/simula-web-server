@@ -1,16 +1,19 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { FilterDTO } from '@types';
 import { Roles } from 'src/roles';
 import { ParametersService } from '../services/parameters.service';
 
 @Controller('parameters')
-// @UseInterceptors(CacheInterceptor)
 export class ParametersController {
   constructor(private readonly parametersService: ParametersService) {}
 
   @Get(':ID')
   @Roles('guest')
-  async getParametersByID(@Param('ID') ID: string): Promise<object> {
-    return await this.parametersService.getParametersByID(ID);
+  async getParametersByID(
+    @Param('ID') ID: string,
+    @Query() query: FilterDTO,
+  ): Promise<object> {
+    return await this.parametersService.getParametersByID(ID, query);
   }
 
   // @Get('/:id')

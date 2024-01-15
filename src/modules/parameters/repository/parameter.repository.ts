@@ -15,7 +15,7 @@ export class ParametersRepository {
     });
   }
 
-  async readFile(id: string): Promise<object> {
+  async readFile(id: string): Promise<object[]> {
     const stream = this.gridFSBucket.openDownloadStream(new ObjectId(id));
 
     const chunks = [];
@@ -46,7 +46,7 @@ export class ParametersRepository {
   async updateFile(id: string, parameters: object): Promise<string> {
     const uploadStream = this.gridFSBucket.openUploadStreamWithId(
       new ObjectId(id),
-      `parameters-${randomUUID()}.json`,
+      `parameters-${id}.json`,
     );
 
     const stream = new Readable();

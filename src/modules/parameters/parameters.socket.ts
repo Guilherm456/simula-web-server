@@ -7,27 +7,14 @@ import {
 } from '@nestjs/websockets';
 import { Queue } from 'bull';
 import { Server, Socket } from 'socket.io';
+import { PayloadParameters } from './interfaces/parameters';
 import { ParametersService } from './services/parameters.service';
 
-interface PayloadParameters {
-  id: string;
-  /**
-   * Operation
-   * u: update
-   * d: delete
-   * a: add
-   */
-  op: 'u' | 'd' | 'a';
-
-  details?: number[];
-
-  parameters?: object;
-
-  timestamp: number;
-}
-
+@WebSocketGateway({
+  cors: `${process.env.CORS_ORIGIN}`,
+  path: '/edit-parameters',
+})
 @Injectable()
-@WebSocketGateway({})
 export class ParametersSocket {
   constructor(
     private readonly parametersService: ParametersService,
@@ -36,21 +23,13 @@ export class ParametersSocket {
   ) {}
   @WebSocketServer() server: Server;
 
-  @SubscribeMessage('startEditing')
-  async handleStartEditing(client: Socket, payload: any): Promise<void> {
-    const { id } = payload;
-    const parameters = await this.parametersService.getParametersByID(id);
-    client.emit('parameters', parameters);
-  }
-
   @SubscribeMessage('edit')
   async handleEdit(client: Socket, payload: PayloadParameters): Promise<void> {
-    const { id, op, details, parameters, timestamp } = payload;
+    const { id, op, details, timestamp } = payload;
     const queue = await this.editParametersQueue.add({
       id,
       op,
       details,
-      parameters,
       timestamp,
     });
 
