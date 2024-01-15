@@ -1,7 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { FilterDTO } from 'src/interfaces';
 import { StructureDTO } from '../entities/DTO/structure.dto';
-import { Structure } from '../entities/structures.interface';
+import {
+  Structure,
+  StructureParameters,
+} from '../entities/structures.interface';
 import { StructureRepository } from '../structure.repository';
 
 @Injectable()
@@ -18,9 +21,9 @@ export class StructureService {
 
   async create(structure: StructureDTO) {
     let lengthParams = 0;
-    Object.keys(structure.parameters).forEach((key) => {
-      if (typeof structure.parameters[key] !== 'object') lengthParams++;
-      else lengthParams += Object.keys(structure.parameters[key]).length + 1;
+
+    structure.parameters.forEach((parameter) => {
+      lengthParams += parameter.subParameters?.length || 1;
     });
 
     try {
@@ -34,5 +37,42 @@ export class StructureService {
         HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  constructValues(parameter: Exclude<StructureParameters, 'subParameters'>) {
+    const values = {};
+
+    parameter.values.forEach((value) => {
+      values[value.name] = value.type === 'number' ? 0 : '';
+    });
+    return [values];
+  }
+
+  // Creates an object with the structure and initial values of the parameters
+  async createParametersObject(structureID: string) {
+    const structureObject = await this.getByID(structureID);
+
+    if (!structureObject)
+      throw new HttpException(
+        'Estrutura não encontrada',
+        HttpStatus.BAD_REQUEST,
+      );
+
+    const parametersObject = {};
+
+    const parameters = structureObject.parameters;
+
+    parameters.forEach((parameter) => {
+      if (parameter.subParameters?.length > 0) {
+        const subParameters = parameter.subParameters;
+        parametersObject[parameter.name] = {};
+        subParameters.forEach((subParameter) => {
+          parametersObject[parameter.name][subParameter.name] =
+            this.constructValues(subParameter);
+        });
+      } else parametersObject[parameter.name] = this.constructValues(parameter);
+    });
+
+    return parametersObject;
   }
 }

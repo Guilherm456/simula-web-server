@@ -72,22 +72,20 @@ export class BaseService {
     structureFinal.name = name;
     structureFinal.type = structureID;
     structureFinal.user = userID;
-    structureFinal.parameters = structureObject.parameters;
+    structureFinal.parameters = {};
 
-    const params = Object.keys(structureObject.parameters);
+    const parameters = structureObject.parameters;
 
     try {
-      for (let i = 0; i < params.length; i++) {
-        const param = params[i];
-        const subParams = Object.keys(structureObject.parameters[param]);
+      for (let i = 0; i < parameters.length; i++) {
+        const param = parameters[i];
 
-        if (subParams.length === 0)
-          structureFinal.parameters[param] = this.convertJSON(files[i]);
+        if (param.subParameters.length === 0)
+          structureFinal.parameters[param.name] = this.convertJSON(files[i]);
         else {
-          for (const subParam of subParams) {
-            structureFinal.parameters[param][subParam] = this.convertJSON(
-              files[i],
-            );
+          for (const subParam of param.subParameters) {
+            structureFinal.parameters[param.name][subParam.name] =
+              this.convertJSON(files[i]);
 
             i++;
           }
@@ -133,7 +131,7 @@ export class BaseService {
   }
 
   async saveBase(
-    { parameters, ...base }: BaseDTO,
+    base: BaseDTO,
     structureID: string,
     userID: string,
   ): Promise<Base> {
@@ -145,6 +143,9 @@ export class BaseService {
       );
 
     try {
+      const parameters =
+        await this.structureService.createParametersObject(structureID);
+
       const parametersObject =
         await this.parametersService.uploadAllParameters(parameters);
 
@@ -183,13 +184,7 @@ export class BaseService {
       );
 
     try {
-      const parametersObject = await this.parametersService.uploadAllParameters(
-        newBase.parameters,
-      );
-      await this.baseRepository.updateBase(baseID, {
-        ...newBase,
-        parameters: parametersObject,
-      });
+      await this.baseRepository.updateBase(baseID, newBase);
 
       this.logger.warn(`Base atualizada: ${newBase.name}`);
       return this.baseRepository.getBaseByID(baseID);
@@ -220,7 +215,6 @@ export class BaseService {
 
     try {
       const baseDeleted = await this.baseRepository.deleteBase(baseID);
-      console.debug('baseDeleted', baseDeleted);
 
       this.logger.warn(`Base deletada: ${baseDeleted.name}`);
       return baseDeleted;

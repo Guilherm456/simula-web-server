@@ -25,7 +25,7 @@ export class StructureRepository {
           __v: false,
           ...filter,
         })
-
+        // .select('-parameters')
         .skip(offset * limit)
         .limit(limit)
         .exec(),

@@ -11,7 +11,7 @@ export interface Structure {
   /**
    * Parâmetros que a simulação necessita
    */
-  parameters: object;
+  parameters: StructureParameters[];
 
   /**
    * Nome da pasta onde está os arquivos de entrada da simulação
@@ -51,6 +51,17 @@ export interface Structure {
   executeCommand: string;
 
   agents: AgentStructure[];
+}
+
+export interface StructureValues {
+  name: string;
+  type: 'string' | 'number' | 'mixed';
+}
+
+export interface StructureParameters {
+  name: string;
+  values: StructureValues[];
+  subParameters?: Exclude<StructureParameters[], 'subParameters'>;
 }
 
 type AgentStructure = {

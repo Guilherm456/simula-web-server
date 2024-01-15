@@ -1,12 +1,45 @@
 import { Schema } from 'mongoose';
-import { Structure } from './structures.interface';
+import {
+  Structure,
+  StructureParameters,
+  StructureValues,
+} from './structures.interface';
+
+const ParametersValueSchema = new Schema<StructureValues>({
+  name: {
+    type: String,
+    required: true,
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ['string', 'number', 'mixed'],
+  },
+});
+
+const ParametersSchema = new Schema<StructureParameters>({
+  name: {
+    type: String,
+    required: true,
+  },
+  values: [ParametersValueSchema],
+  subParameters: [
+    {
+      name: {
+        type: String,
+        required: true,
+      },
+      values: [ParametersValueSchema],
+    },
+  ],
+});
 
 export const StructureSchema = new Schema<Structure>({
   name: {
     type: String,
     required: true,
   },
-  parameters: Object,
+  parameters: [ParametersSchema],
   inputsFolder: {
     type: String,
     set: (value: string) => (value && value[0] === '/' ? value : '/' + value),

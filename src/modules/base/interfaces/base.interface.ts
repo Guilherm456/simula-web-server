@@ -4,6 +4,7 @@ import { Document } from 'mongoose';
 
 export interface Base {
   name: string;
+  description: string;
   type: Structure | string;
   user: User | string;
   createdAt: string;

@@ -2,8 +2,16 @@ import { Schema } from 'mongoose';
 import { Base } from './base.interface';
 
 export const BaseSchema = new Schema<Base>({
-  name: String,
-
+  name: {
+    type: String,
+    required: true,
+    maxlength: 50,
+    minlength: 3,
+  },
+  description: {
+    type: String,
+    maxlength: 255,
+  },
   parameters: {
     type: Object,
     of: {

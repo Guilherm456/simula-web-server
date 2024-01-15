@@ -1,55 +1,68 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   ArrayUnique,
   IsArray,
+  IsIn,
   IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
   MinLength,
-  Validate,
   ValidateNested,
-  ValidationArguments,
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
 } from 'class-validator';
+import { AtLeastOneButNotBoth } from 'src/DTO/customValidators';
 import { AgentsStructureDTO } from './agents.dto';
 
-@ValidatorConstraint({ name: 'ComplexParametersValidator', async: false })
-export class ComplexParametersValidator
-  implements ValidatorConstraintInterface
-{
-  validate(value: any, args: ValidationArguments) {
-    if (typeof value !== 'object' || value === null) {
-      return false;
-    }
+class ValuesDTO {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    const isValidArray = (value) => Array.isArray(value) && value.length === 1;
+  @IsIn(['string', 'number', 'mixed'])
+  @IsNotEmpty()
+  type: 'string' | 'number' | 'mixed';
+}
 
-    const keys = Object.keys(value);
+class ParametersDTO {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    for (const key of keys) {
-      const element = value[key];
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @ArrayUnique((value: ValuesDTO) => value.name, {
+    message: 'Name must be unique',
+  })
+  @Type(() => ValuesDTO)
+  values: ValuesDTO[];
+}
 
-      if (typeof element !== 'object') {
-        return isValidArray(element);
-      } else {
-        const subKeys = Object.keys(element);
+class ParametersDTOFirst {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-        for (const subKey of subKeys) {
-          const subElement = element[subKey];
+  @IsArray()
+  @IsOptional()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @ArrayUnique((value: ValuesDTO) => value.name, {
+    message: 'Name must be unique',
+  })
+  @Type(() => ValuesDTO)
+  values: ValuesDTO[];
 
-          return isValidArray(subElement);
-        }
-      }
-    }
-
-    return true;
-  }
-
-  defaultMessage(args: ValidationArguments) {
-    return 'Parameters must follow the specified structure rules';
-  }
+  @IsArray()
+  @IsOptional()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @ArrayUnique((parameter: ParametersDTO) => parameter.name, {
+    message: 'Name must be unique',
+  })
+  @Type(() => ParametersDTO)
+  subParameters: ParametersDTO[];
 }
 
 export class StructureDTO {
@@ -57,9 +70,15 @@ export class StructureDTO {
   @MinLength(4)
   name: string;
 
-  @IsNotEmpty()
-  @Validate(ComplexParametersValidator)
-  parameters: object;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @ArrayUnique((parameter: ParametersDTO) => parameter.name, {
+    message: 'Name must be unique',
+  })
+  @Type(() => ParametersDTOFirst)
+  @AtLeastOneButNotBoth(['values', 'subParameters'])
+  parameters: ParametersDTOFirst[];
 
   @IsString()
   @IsOptional()
