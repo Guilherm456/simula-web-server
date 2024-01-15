@@ -7,10 +7,10 @@ import {
 } from '@nestjs/websockets';
 import { existsSync, openSync, readFileSync, watchFile } from 'fs';
 
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { LoggerServer } from 'src/loggerServer';
 
-@WebSocketGateway({ cors: '*' })
+@WebSocketGateway({ cors: '*', path: '/log' })
 @Injectable()
 export class AppGateway implements OnGatewayInit {
   private file: string;
@@ -20,7 +20,7 @@ export class AppGateway implements OnGatewayInit {
   @WebSocketServer()
   private server: Server;
   afterInit() {
-    this.file = __dirname + '/../../log.txt';
+    this.file = __dirname + '/../../log.json';
 
     //Vai verificar se existe o arquivo
     //Se não existir, cria um
@@ -28,7 +28,7 @@ export class AppGateway implements OnGatewayInit {
       openSync(this.file, 'w');
     }
     try {
-      watchFile(this.file, (curr, prev) => {
+      watchFile(this.file, () => {
         this.server.emit('log', this.handleLog());
       });
     } catch (e) {
@@ -37,9 +37,12 @@ export class AppGateway implements OnGatewayInit {
   }
 
   @SubscribeMessage('log')
-  handleLog(client?: Socket): string[] {
-    const lines = readFileSync(this.file, 'utf8').split('\n');
+  handleLog(): object[] {
+    const lines = readFileSync(this.file)
+      .toString()
+      .split('\n')
+      .filter((line) => line);
 
-    return lines;
+    return lines.map((line) => JSON.parse(line));
   }
 }
