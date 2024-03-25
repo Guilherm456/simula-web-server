@@ -14,6 +14,11 @@ export interface Structure {
   parameters: StructureParameters[];
 
   /**
+   * Parâmetros de saída da simulação
+   */
+  outputParameters: StructureParameters[];
+
+  /**
    * Nome da pasta onde está os arquivos de entrada da simulação
    * @type {string}
    * @example '/entrada'

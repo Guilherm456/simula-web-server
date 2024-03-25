@@ -80,8 +80,18 @@ export class StructureDTO {
   @AtLeastOneButNotBoth(['values', 'subParameters'])
   parameters: ParametersDTOFirst[];
 
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @ArrayUnique((parameter: ParametersDTO) => parameter.name, {
+    message: 'Name must be unique',
+  })
+  @Type(() => ParametersDTOFirst)
+  @AtLeastOneButNotBoth(['values', 'subParameters'])
+  outputParameters: ParametersDTOFirst[];
+
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   inputsFolder: string;
 
   @IsString()
@@ -89,7 +99,7 @@ export class StructureDTO {
   folder: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   resultsFolder: string;
 
   @IsString()

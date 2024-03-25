@@ -1,11 +1,20 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FilterDTO } from '@types';
 import { Roles } from 'src/roles';
 import { StructureDTO } from '../entities/DTO/structure.dto';
 import { StructureService } from '../service/structure.service';
 
 @Controller('structure')
-// @UseInterceptors(CacheInterceptor)
+@UseInterceptors(CacheInterceptor)
 export class StructureController {
   constructor(private readonly structureService: StructureService) {}
 

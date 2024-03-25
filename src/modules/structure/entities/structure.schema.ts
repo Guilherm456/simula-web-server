@@ -34,14 +34,32 @@ const ParametersSchema = new Schema<StructureParameters>({
   ],
 });
 
+const AgentSchema = new Schema({
+  name: String,
+  label: {
+    type: String,
+  },
+  color: {
+    type: String,
+    default: '#000000',
+  },
+  onData: {
+    type: String,
+    get: (value: string) => eval(value),
+    default: 'function (data, type) { return data[type.label]}',
+  },
+});
+
 export const StructureSchema = new Schema<Structure>({
   name: {
     type: String,
     required: true,
   },
   parameters: [ParametersSchema],
+  outputParameters: [ParametersSchema],
   inputsFolder: {
     type: String,
+    required: true,
     set: (value: string) => (value && value[0] === '/' ? value : '/' + value),
   },
   folder: {
@@ -52,43 +70,10 @@ export const StructureSchema = new Schema<Structure>({
   },
   resultsFolder: {
     type: String,
+    required: true,
     set: (value: string) => (value && value[0] === '/' ? value : '/' + value),
   },
   lengthParams: Number,
   executeCommand: String,
-  agents: [
-    {
-      name: String,
-      label: {
-        type: String,
-      },
-      color: {
-        type: String,
-        default: '#000000',
-      },
-      onData: {
-        type: String,
-        get: (value: string) => eval(value),
-        default: 'function (data, type) { return data[type.label]}',
-      },
-    },
-  ],
+  agents: [AgentSchema],
 });
-
-// StructureSchema.pre('findOneAndDelete', async function (next, ops) {
-//   console.debug(this, next, ops);
-//   // const structure = await this.model.findOne(this.getQuery());
-//   // if (!structure) return next();
-
-//   // const { folder } = structure;
-//   // const { exec } = require('child_process');
-//   // exec(`rm -rf ${folder}`, (err, stdout, stderr) => {
-//   //   if (err) {
-//   //     console.error(err);
-//   //     return;
-//   //   }
-//   //   console.log(stdout);
-//   // });
-
-//   // next();
-// });
