@@ -11,7 +11,15 @@ import { UsersService } from './users.service';
 
 @Module({
   controllers: [UsersController],
-  providers: [UsersService, UsersRepository, LoggerServer],
+  providers: [
+    UsersService,
+    UsersRepository,
+    LoggerServer,
+    // {
+    //   provide: getModelToken(UserSchema
+    //   useValue: UserSchema,
+    // },
+  ],
   imports: [
     MongooseModule.forFeature([{ name: 'users', schema: UserSchema }]),
     MailerModule.forRoot({

@@ -2,6 +2,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { FilterDTO } from '@types';
 import * as brycpt from 'bcrypt';
 import { Job, Queue } from 'bull';
 import { randomUUID } from 'crypto';
@@ -56,6 +57,10 @@ export class UsersService {
       this.logger.error(err);
       throw new HttpException('Erro ao criar usuário', HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async getUsers(filters?: FilterDTO) {
+    return await this.userRepository.getUsers(filters);
   }
 
   async login(account: LoginDTO) {
@@ -163,9 +168,9 @@ export class UsersService {
     return await this.userRepository.getUserByEmail(email);
   }
 
-  // update(id: string, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+  async deleteUser(id: string) {
+    return await this.userRepository.deleteUser(id);
+  }
 
   async updateColumn(id: string, column: string, value: any) {
     return await this.userRepository.updateColumn(id, column, value);

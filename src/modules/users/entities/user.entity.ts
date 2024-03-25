@@ -8,6 +8,7 @@ export interface User {
   createdAt: string;
   updatedAt?: string;
   _id?: string;
+  active: boolean;
 }
 
 export type Roles = 'admin' | 'user' | 'guest';

@@ -2,6 +2,10 @@ import { Schema } from 'mongoose';
 import { User } from './user.entity';
 
 export const UserSchema = new Schema<User>({
+  active: {
+    type: Boolean,
+    default: true,
+  },
   name: {
     type: String,
     required: true,

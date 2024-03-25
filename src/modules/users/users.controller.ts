@@ -4,12 +4,12 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { MiddlewareRequest } from '@types';
+import { FilterDTO, MiddlewareRequest } from '@types';
 import { Public, Roles } from 'src/roles';
 import { LocalStrategy } from '../../middleware/auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -18,7 +18,6 @@ import {
   RecoverPasswordDto,
   RecoverPasswordEmailDto,
 } from './dto/recover-password.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -31,14 +30,16 @@ export class UsersController {
     return this.usersService.createUser(createUserDto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    // return this.usersService.update(+id, updateUserDto);
+  @Get()
+  @Roles('admin')
+  findAll(@Query() filter: FilterDTO) {
+    return this.usersService.getUsers(filter);
   }
 
   @Delete(':id')
+  @Roles('admin')
   remove(@Param('id') id: string) {
-    // return this.usersService.remove(+id);
+    return this.usersService.deleteUser(id);
   }
 
   @Post('login')

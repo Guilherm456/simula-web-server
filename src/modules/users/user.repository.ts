@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { Pagination } from '@types';
 import { Model } from 'mongoose';
 import { FilterDTO } from 'src/interfaces/query.interface';
+import { buildFilter } from 'src/middleware/filter';
 import { User } from './entities/user.entity';
 @Injectable()
 export class UsersRepository {
@@ -19,13 +21,30 @@ export class UsersRepository {
     return await newUser.save();
   }
 
-  async getUsers(filters: FilterDTO): Promise<User[]> {
-    return await this.userModel
-      .find({
-        __v: false,
-        ...filters,
-      })
-      .exec();
+  async getUsers({ limit = 10, offset = 0, ...query }: FilterDTO = {}): Promise<
+    Pagination<User>
+  > {
+    const filter = buildFilter(query);
+    const [content, totalElements] = await Promise.all([
+      await this.userModel
+        .find({
+          __v: false,
+          active: true,
+          ...filter,
+        })
+        .exec(),
+      await this.userModel.countDocuments(query).exec(),
+    ]);
+
+    const totalPages = Math.ceil(totalElements / limit);
+    const hasNext = offset + 1 < totalPages;
+
+    return {
+      content,
+      totalElements,
+      totalPages,
+      hasNext,
+    } as Pagination<User>;
   }
 
   async getUserByEmail(email: string): Promise<User> {
@@ -50,6 +69,9 @@ export class UsersRepository {
       .exec();
   }
 
+  async deleteUser(id: string): Promise<User> {
+    return await this.updateColumn(id, 'active', false);
+  }
   async userExists(id: string): Promise<boolean> {
     return !!(await this.userModel.exists({ _id: id }).exec());
   }
