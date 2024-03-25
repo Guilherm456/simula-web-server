@@ -1,101 +1,66 @@
 import { Injectable } from '@nestjs/common';
-import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { GridFSBucket, ObjectId } from 'mongodb';
-import { Connection, Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 import { Output } from '@modules/saida/interface/output.interface';
-import { LoggerServer } from 'src/loggerServer';
-import { Saida } from './saida.interface';
+import { FilterDTO } from '@types';
+import { buildFilter } from 'src/middleware/filter';
+import { OutputDocument } from './saida.interface';
 
 @Injectable()
 export class SaidaRepository {
-  private gridFSBucket: GridFSBucket;
-
   constructor(
-    @InjectModel('saida') private readonly saidaModel: Model<Saida>,
-    private readonly logger: LoggerServer,
-    @InjectConnection() private readonly connection: Connection,
-  ) {
-    this.gridFSBucket = new GridFSBucket(this.connection.db as any, {
-      bucketName: 'saidas',
-    });
+    @InjectModel('saida') private readonly outputModel: Model<OutputDocument>,
+  ) {}
+
+  async getAllSaidas({ offset, limit, ...query }: FilterDTO = {}) {
+    const filter = buildFilter(query);
+    const [content, totalElements] = await Promise.all([
+      this.outputModel.find(filter).skip(offset).limit(limit).exec(),
+      this.outputModel.countDocuments(filter).exec(),
+    ]);
+
+    return {
+      content,
+      totalElements,
+      totalPages: Math.ceil(totalElements / limit),
+      hasNext: totalElements > offset + limit,
+    };
   }
 
-  async readFile(id: string): Promise<any> {
-    const stream = this.gridFSBucket.openDownloadStream(new ObjectId(id));
-    const chunks = [];
-    for await (const chunk of stream) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
-    return JSON.parse(buffer.toString('utf-8'));
+  async getSaidaByID(id: string) {
+    return await this.outputModel.findById(id).exec();
   }
 
-  async getAllSaidas(): Promise<Saida[]> {
-    try {
-      return await this.saidaModel.find().exec();
-    } catch (error) {
-      this.logger.error(`Failed to get all saidas: ${error.message}`);
-      throw error;
-    }
+  async saveOutput(output: Output) {
+    const saida = new this.outputModel(output);
+    return await saida.save();
   }
 
-  async getSaidaByID(id: string): Promise<Saida> {
-    try {
-      const saida = await this.saidaModel.findById(id).exec();
-      if (saida && saida.data) {
-        const fileData = await this.readFile(saida.data.toString());
-        saida.data = fileData; // Replace the file ID with the actual data from GridFS
-      }
-      return saida;
-    } catch (error) {
-      this.logger.error(`Failed to get saida by ID: ${error.message}`);
-      throw error;
-    }
+  async updateOutput(id: string, output: Output) {
+    return await this.outputModel
+      .findOneAndReplace(
+        {
+          _id: id,
+        },
+        output,
+        { new: true },
+      )
+      .exec();
   }
 
-  async getSaidasBySimulationID(simulationId: string): Promise<Saida[]> {
-    try {
-      const saidas = await this.saidaModel.find({ simulationId }).exec();
-      for (const saida of saidas) {
-        if (saida && saida.data) {
-          const fileData = await this.readFile(saida.data.toString());
-          saida.data = fileData;
-        }
-      }
-      return saidas;
-    } catch (error) {
-      this.logger.error(
-        `Failed to get saidas by simulationId: ${error.message}`,
-      );
-      throw error;
-    }
+  async getSaidaBySimulationID(simulationID: string) {
+    return await this.outputModel.findOne({ simulation: simulationID }).exec();
   }
 
-  async saveSaida(output: Output): Promise<Saida> {
-    const newSaida = new this.saidaModel(output);
-    return await newSaida.save();
+  async deleteSaida(id: string) {
+    const ouput = await this.outputModel.findOneAndDelete({ _id: id }).exec();
+
+    return ouput.value;
   }
 
-  // async updateSaida(id: string, newData: object): Promise<Saida> {
-  //   try {
-  //     const fileId = await this.uploadFile(newData);
-  //     return await this.saidaModel
-  //       .findByIdAndUpdate(
-  //         id,
-  //         { data: fileId },
-  //         {
-  //           new: true,
-  //         },
-  //       )
-  //       .exec();
-  //   } catch (error) {
-  //     this.logger.error(`Failed to update saida: ${error.message}`);
-  //     throw error;
-  //   }
-  // }
-
-  async deleteSaida(id: string): Promise<Saida> {
-    return (await this.saidaModel.findOneAndDelete({ _id: id }).exec()).value;
+  async alreadyExists(id: string): Promise<boolean> {
+    const ouput = await this.outputModel.exists({ _id: id }).exec();
+    return !!ouput;
   }
 }

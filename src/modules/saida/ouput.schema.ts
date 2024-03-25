@@ -1,7 +1,8 @@
 import { Schema } from 'mongoose';
+import { Output } from './interface/output.interface';
 
-export const SaidaSchema = new Schema({
-  simulationId: {
+export const OutputSchema = new Schema<Output>({
+  simulation: {
     type: Schema.Types.ObjectId,
     ref: 'simulacao',
   },
@@ -14,7 +15,7 @@ export const SaidaSchema = new Schema({
   },
   structure: {
     type: Schema.Types.ObjectId,
-    ref: 'structure',
+    ref: 'structures',
   },
   createdAt: {
     type: String,
@@ -22,7 +23,9 @@ export const SaidaSchema = new Schema({
   },
   agentsStats: [
     {
-      agent: Object,
+      agent: {
+        type: Schema.Types.ObjectId,
+      },
       stats: [Number],
     },
   ],
