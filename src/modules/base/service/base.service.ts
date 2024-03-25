@@ -177,17 +177,21 @@ export class BaseService {
         HttpStatus.NOT_FOUND,
       );
 
-    if (base.user !== userID)
+    if (base.user?.toString() !== userID)
       throw new HttpException(
         'Você não tem permissão para editar essa base',
         HttpStatus.UNAUTHORIZED,
       );
 
     try {
-      await this.baseRepository.updateBase(baseID, newBase);
+      const updatedBase = await this.baseRepository.updateBase(baseID, {
+        ...base,
+        ...newBase,
+        updatedAt: new Date().toISOString(),
+      });
 
       this.logger.warn(`Base atualizada: ${newBase.name}`);
-      return this.baseRepository.getBaseByID(baseID);
+      return updatedBase;
     } catch (e) {
       this.logger.error(`Erro ao atualizar a base! Erro: ${e}`);
 

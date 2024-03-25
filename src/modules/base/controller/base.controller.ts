@@ -6,8 +6,8 @@ import {
   HttpException,
   HttpStatus,
   Param,
-  Patch,
   Post,
+  Put,
   Query,
   Req,
   UploadedFiles,
@@ -91,7 +91,7 @@ export class BaseController {
   }
 
   //Atualiza a base
-  @Patch('/:baseID')
+  @Put('/:baseID')
   @Roles('user')
   async updateBase(
     @Param('baseID') baseID: string,

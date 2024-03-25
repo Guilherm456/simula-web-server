@@ -2,12 +2,17 @@ import { Schema } from 'mongoose';
 import { Base } from './base.interface';
 
 export const BaseSchema = new Schema<Base>({
+  active: {
+    type: Boolean,
+    default: true,
+  },
   name: {
     type: String,
     required: true,
     maxlength: 50,
     minlength: 3,
   },
+
   description: {
     type: String,
     maxlength: 255,
@@ -42,7 +47,6 @@ BaseSchema.pre('findOneAndDelete', { document: true }, async function (next) {
 
   const parameters = doc.parameters as any;
   for (const key in parameters) {
-    console.debug('key', key);
     if (Object.prototype.hasOwnProperty.call(parameters, key)) {
       const parameter = parameters[key];
       await doc.model('parameters').deleteOne({ _id: parameter });

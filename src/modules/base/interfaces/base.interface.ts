@@ -3,6 +3,7 @@ import { User } from '@modules/users/entities/user.entity';
 import { Document } from 'mongoose';
 
 export interface Base {
+  active: boolean;
   name: string;
   description: string;
   type: Structure | string;

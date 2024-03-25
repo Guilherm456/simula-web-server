@@ -4,7 +4,6 @@ import { Model } from 'mongoose';
 
 import { FilterDTO, Pagination } from '@types';
 import { buildFilter } from 'src/middleware/filter';
-import { BaseDTO } from './interfaces/base.dto';
 import { Base, BaseDocument } from './interfaces/base.interface';
 
 @Injectable()
@@ -19,6 +18,7 @@ export class BaseRepository {
     const [content, totalElements] = await Promise.all([
       this.baseModel
         .find({
+          active: true,
           __v: false,
           ...filter,
         })
@@ -48,23 +48,33 @@ export class BaseRepository {
     return base;
   }
 
-  async saveBase(baseDTO: Omit<Base, 'createdAt'>): Promise<Base> {
+  async saveBase(baseDTO: Omit<Base, 'createdAt' | 'active'>): Promise<Base> {
     const base = new this.baseModel(baseDTO);
     return await base.save();
   }
 
-  async updateBase(baseID: string, newBase: BaseDTO): Promise<boolean> {
-    await this.baseModel
-      .replaceOne({ _id: baseID }, newBase, {
+  async updateBase(baseID: string, newBase: Base): Promise<Base> {
+    return await this.baseModel
+      .findOneAndReplace({ _id: baseID }, newBase, {
         new: true,
       })
       .exec();
-
-    return true;
   }
 
+  async replaceColumn(
+    baseID: string,
+    nameColumn: string,
+    newValue: any,
+  ): Promise<Base> {
+    return await this.baseModel.findOneAndUpdate(
+      { _id: baseID },
+      {
+        [nameColumn]: newValue,
+        updatedAt: new Date().toISOString(),
+      },
+    );
+  }
   async deleteBase(baseID: string): Promise<Base> {
-    const base = await this.baseModel.findOneAndDelete({ _id: baseID }).exec();
-    return base.value;
+    return await this.replaceColumn(baseID, 'active', false);
   }
 }
