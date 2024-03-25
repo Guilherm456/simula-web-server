@@ -15,9 +15,4 @@ export class ParametersController {
   ): Promise<object> {
     return await this.parametersService.getParametersByID(ID, query);
   }
-
-  // @Get('/:id')
-  // async test(@Param('id') id: string) {
-  //   return await this.parametersService.test(id);
-  // }
 }

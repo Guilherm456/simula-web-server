@@ -8,6 +8,7 @@ import { spawn } from 'child_process';
 import { Simulacao } from '@modules/simulacao/interface/simulacao.interface';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import { Job, Queue } from 'bull';
+import { rmSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
 import { unparse } from 'papaparse';
 import { ParametersService } from 'src/modules/parameters/services/parameters.service';
@@ -55,7 +56,7 @@ export class SimulatorService {
     }
   }
 
-  async creteFile(fileName: string, data: object) {
+  async createFile(fileName: string, data: object) {
     const csv = unparse(data as any, {
       delimiter: ';',
       quotes: false,
@@ -76,14 +77,24 @@ export class SimulatorService {
     );
 
     if (!structure)
-      throw new HttpException(
-        'Tipo de estrutura não encontrada',
-        HttpStatus.NOT_FOUND,
+      throw new Error(
+        `Estrutura da simulação ${simulation.name} não encontrada`,
       );
 
     const parameters = await this.parametersService.getAllParameters(
       simulation.parameters,
     );
+
+    if (!parameters) {
+      this.logger.error(
+        `Erro ao buscar parâmetros da simulação ${simulation.name}`,
+      );
+
+      this.handleError(
+        simulation._id.toString(),
+        new Error('Erro ao buscar parâmetros'),
+      );
+    }
 
     const folderExec = resolve(`output/${structure.folder}`);
 
@@ -92,58 +103,61 @@ export class SimulatorService {
     );
 
     try {
-      const folderInput = `${folderExec}/${structure.inputsFolder || ''}`;
+      const folderInput = `${folderExec}${structure.inputsFolder || ''}`;
+      rmSync(folderInput, { force: true, recursive: true });
+
       await mkdir(folderInput, { recursive: true });
-      const names = Object.keys(structure.parameters);
+
+      const structuresFolder = structure.parameters;
 
       await Promise.all(
-        names.map(async (name) => {
-          const names_param = Object.keys(structure.parameters[name]);
+        structuresFolder.map(async (structure) => {
+          if (structure.subParameters?.length > 0) {
+            const folderSubInput = `${folderInput}/${structure.name}`;
 
-          if (names_param.length > 0) {
-            const actualDir = `${folderInput}/${name}`;
-            await mkdir(actualDir, { recursive: true });
+            await mkdir(folderSubInput, { recursive: true });
 
             await Promise.all(
-              names_param.map(async (name_param) => {
-                await this.creteFile(
-                  `${actualDir}/${name_param}.csv`,
-                  parameters[name][name_param],
+              structure.subParameters.map(async (subStructure) => {
+                await this.createFile(
+                  `${folderSubInput}/${subStructure.name}.csv`,
+                  parameters[structure.name][subStructure.name],
                 );
               }),
             );
-          } else
-            await this.creteFile(
-              `${folderInput}/${name}.csv`,
-              parameters[name],
+          } else {
+            await this.createFile(
+              `${folderInput}/${structure.name}.csv`,
+              parameters[structure.name],
             );
+          }
         }),
       );
 
-      await this.executeCommand(
-        simulation,
-        `cd ${folderExec} && ${structure.executeCommand} `,
+      this.logger.log(
+        `Pasta da simulação ${simulation.name} criada com sucesso. Executando simulação...`,
       );
-      this.logger.log(`Simulação ${simulation.name} executada com sucesso!`);
     } catch (e) {
-      this.simulacaoService.replaceColumn(
-        simulation._id.toString(),
-        'status',
-        'ERROR',
-      );
-
-      this.logger.error(
-        `Algum erro ocorreu ao executar a simulação ${simulation.name}! Erro: ${e}`,
-      );
-      throw new HttpException(
-        'Erro ao criar pasta da simulação',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      this.handleError(simulation._id.toString(), e);
     }
+
+    const outputFolder = resolve(
+      `${folderExec}${structure.resultsFolder || ''}`,
+    );
+    rmSync(outputFolder, { force: true, recursive: true });
+
+    await mkdir(outputFolder, { recursive: true });
+
+    await this.executeCommand(
+      simulation,
+      `cd ${folderExec} && ${structure.executeCommand} `,
+    );
+    this.logger.log(`Simulação ${simulation.name} executada com sucesso!`);
   }
 
   async executeCommand(simulation: Simulacao, command: string) {
     const simulationId = simulation._id.toString();
+
     return new Promise((resolve, reject) => {
       const childProc = spawn(`${command}`, { shell: true });
 
@@ -182,5 +196,12 @@ export class SimulatorService {
         }
       });
     });
+  }
+
+  async handleError(simulationId: string, error: Error) {
+    this.simulacaoService.replaceColumn(simulationId, 'status', 'ERROR');
+    this.logger.error(
+      `Erro ao executar a simulação ${simulationId}: ${error.message}`,
+    );
   }
 }
