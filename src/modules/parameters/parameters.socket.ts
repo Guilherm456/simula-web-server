@@ -8,7 +8,6 @@ import {
 import { Queue } from 'bull';
 import { Server, Socket } from 'socket.io';
 import { PayloadParameters } from './interfaces/parameters';
-import { ParametersService } from './services/parameters.service';
 
 @WebSocketGateway({
   cors: `${process.env.CORS_ORIGIN}`,
@@ -17,7 +16,6 @@ import { ParametersService } from './services/parameters.service';
 @Injectable()
 export class ParametersSocket {
   constructor(
-    private readonly parametersService: ParametersService,
     @InjectQueue('editParameters')
     private readonly editParametersQueue: Queue<PayloadParameters>,
   ) {}

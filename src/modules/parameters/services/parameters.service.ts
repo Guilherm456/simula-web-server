@@ -17,16 +17,12 @@ export class ParametersService {
     try {
       const param = await this.parametersRepository.readFile(id);
 
-      if (!param)
-        throw new HttpException(
-          'Parâmetro não encontrado',
-          HttpStatus.BAD_REQUEST,
-        );
+      if (!param) throw new Error('Parâmetro não encontrado');
 
       return param;
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
   }
 
@@ -69,13 +65,17 @@ export class ParametersService {
       const parameters = {};
       await Promise.all(
         keys.map(async (key) => {
-          parameters[key] = await this.parametersRepository.readFile(ids[key]);
+          if (typeof ids[key] === 'string') {
+            parameters[key] = await this.readFile(ids[key]);
+          } else {
+            parameters[key] = await this.getAllParameters(ids[key]);
+          }
         }),
       );
       return parameters;
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error('Erro ao buscar parâmetros');
     }
   }
 
@@ -84,13 +84,15 @@ export class ParametersService {
       return await this.parametersRepository.uploadJSON(parameters);
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
   }
 
   async uploadAllParameters(parameters: object): Promise<any> {
     const keys = Object.keys(parameters);
     const newParameters = parameters;
+
+    console.debug(parameters, keys);
 
     try {
       await Promise.all(
@@ -112,10 +114,7 @@ export class ParametersService {
 
       return newParameters;
     } catch (e) {
-      throw new HttpException(
-        'Ocorreu algum erro ao salvar o arquivo',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error('Ocorreu algum erro ao salvar o arquivo');
     }
   }
 
@@ -125,7 +124,7 @@ export class ParametersService {
       return await this.uploadParameters(parameters);
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
   }
 
@@ -156,7 +155,7 @@ export class ParametersService {
       return newParameters;
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
   }
 
@@ -165,7 +164,7 @@ export class ParametersService {
       await this.parametersRepository.deleteFile(id);
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
   }
 
@@ -173,28 +172,30 @@ export class ParametersService {
     try {
       const keys = Object.keys(ids);
       await Promise.all(
-        keys.map(async (key) => await this.deleteParameters(ids[key])),
+        keys.map(async (key) => {
+          if (typeof ids[key] === 'string') {
+            await this.deleteParameters(ids[key]);
+          } else {
+            await this.deleteAllParameters(ids[key]);
+          }
+        }),
       );
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
   }
 
   async updateParameters(id: string, newParameters: object): Promise<string> {
     // Backup do arquivo antigo
     const oldParameters = await this.parametersRepository.readFile(id);
-    if (!oldParameters)
-      throw new HttpException(
-        'Parâmetro não encontrado',
-        HttpStatus.BAD_REQUEST,
-      );
+    if (!oldParameters) throw new Error('Parâmetro não encontrado');
 
     try {
       await this.parametersRepository.deleteFile(id);
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
 
     try {
@@ -210,14 +211,11 @@ export class ParametersService {
           'Falha ao reverter para o estado anterior',
           revertError,
         );
-        throw new HttpException(
-          'Falha ao atualizar e ao reverter mudanças',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
+        throw new Error('Falha ao atualizar e ao reverter mudanças');
       }
 
       // Lançar o erro original após a reversão
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(error);
     }
   }
 }
