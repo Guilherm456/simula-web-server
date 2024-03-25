@@ -2,6 +2,10 @@ import { Schema } from 'mongoose';
 import { Simulacao } from './simulacao.interface';
 
 export const SimulacaoSchema = new Schema<Simulacao>({
+  active: {
+    type: Boolean,
+    default: true,
+  },
   name: String,
   base: {
     ref: 'base',
@@ -11,6 +15,12 @@ export const SimulacaoSchema = new Schema<Simulacao>({
     ref: 'structures',
     type: Schema.Types.ObjectId,
   },
+  output: {
+    ref: 'saida',
+    optional: true,
+    type: Schema.Types.ObjectId,
+  },
+
   status: {
     type: String,
     enum: ['PENDING', 'RUNNING', 'FINISHED', 'ERROR'],

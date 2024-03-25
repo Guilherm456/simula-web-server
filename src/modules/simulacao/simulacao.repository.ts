@@ -6,7 +6,6 @@ import { Base } from '@modules/base/interfaces/base.interface';
 import { Pagination } from 'src/interfaces';
 import { buildFilter } from 'src/middleware/filter';
 import { FilterDTO } from '../../interfaces/query.interface';
-import { SimulacaoDTO } from './interface';
 import {
   Simulacao,
   SimulacaoDocument,
@@ -36,7 +35,7 @@ export class SimulacaoRepository {
   }
 
   async saveSimulations(
-    simulacao: Omit<Simulacao, 'createdAt' | 'status'>,
+    simulacao: Omit<Simulacao, 'createdAt' | 'status' | 'active'>,
     base: Base,
   ): Promise<Simulacao> {
     const savedSimulacao = new this.simulacaoModel({
@@ -92,17 +91,16 @@ export class SimulacaoRepository {
 
   async updateSimulations(
     simulacaoID: string,
-    newSimulacao: SimulacaoDTO,
+    newSimulacao: Simulacao,
   ): Promise<Simulacao> {
     return await this.simulacaoModel
-      .findOneAndReplace({ _id: simulacaoID }, newSimulacao)
+      .findOneAndReplace({ _id: simulacaoID }, newSimulacao, {
+        new: true,
+      })
       .exec();
   }
 
   async deleteSimulations(simulacaoID: string): Promise<Simulacao> {
-    const simulation = await this.simulacaoModel
-      .findOneAndDelete({ _id: simulacaoID })
-      .exec();
-    return simulation.value;
+    return await this.replaceColumn(simulacaoID, 'active', false);
   }
 }

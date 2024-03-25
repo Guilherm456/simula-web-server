@@ -4,7 +4,7 @@ import { FilterDTO } from 'src/interfaces/query.interface';
 import { LoggerServer } from 'src/loggerServer';
 import { BaseService } from 'src/modules/base/service/base.service';
 import { ParametersService } from 'src/modules/parameters/services/parameters.service';
-import { SimulacaoDTO, SimulacaoEditDTO } from '../interface';
+import { SimulacaoDTO } from '../interface';
 import { Simulacao } from '../interface/simulacao.interface';
 import { SimulacaoRepository } from '../simulacao.repository';
 
@@ -84,7 +84,7 @@ export class SimulacaoService {
   //Atualiza uma simulação
   async updateSimulations(
     simulacaoID: string,
-    newSimulacao: SimulacaoEditDTO,
+    newSimulacao: SimulacaoDTO,
     userID: string,
   ): Promise<Simulacao> {
     const simulacaoOld =
@@ -92,18 +92,26 @@ export class SimulacaoService {
     if (!simulacaoOld)
       throw new HttpException('Simulação não encontrada', HttpStatus.NOT_FOUND);
 
-    if (simulacaoOld.user != userID)
+    if (simulacaoOld.user?.toString() !== userID)
       throw new HttpException(
         'Você não tem permissão para alterar essa simulação',
         HttpStatus.UNAUTHORIZED,
       );
 
     try {
-      return await this.simulacaoRepository.updateSimulations(
-        simulacaoID,
-        newSimulacao,
-      );
+      const updatedSimulation =
+        await this.simulacaoRepository.updateSimulations(simulacaoID, {
+          ...simulacaoOld,
+          ...newSimulacao,
+          updatedAt: new Date().toISOString(),
+        });
+
+      this.logger.warn(`Simulação atualizada: ${newSimulacao.name}`);
+
+      return updatedSimulation;
     } catch (e) {
+      this.logger.error(`Erro ao atualizar a simulação! Erro: ${e}`);
+
       throw new HttpException(
         'Erro ao atualizar simulação',
         HttpStatus.INTERNAL_SERVER_ERROR,

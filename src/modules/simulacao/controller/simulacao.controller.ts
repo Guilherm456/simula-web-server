@@ -5,8 +5,8 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
+  Put,
   Query,
   Request,
   UseInterceptors,
@@ -16,7 +16,7 @@ import { MiddlewareRequest } from '@types';
 import { FilterDTO } from 'src/interfaces/query.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 import { Roles } from 'src/roles';
-import { SimulacaoDTO, SimulacaoEditDTO } from '../interface';
+import { SimulacaoDTO } from '../interface';
 import { Simulacao } from '../interface/simulacao.interface';
 
 @Controller('simulacao')
@@ -58,11 +58,11 @@ export class SimulacaoController {
     );
   }
 
-  @Patch(':simulacaoID')
+  @Put(':simulacaoID')
   @Roles('user')
   async updateSimulacao(
     @Param('simulacaoID') simulacaoID: string,
-    @Body() newSimulacao: SimulacaoEditDTO,
+    @Body() newSimulacao: SimulacaoDTO,
     @Request() req: MiddlewareRequest,
   ): Promise<Simulacao> {
     return await this.simulacaoService.updateSimulations(
