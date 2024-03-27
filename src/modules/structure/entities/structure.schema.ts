@@ -22,6 +22,7 @@ const ParametersSchema = new Schema<StructureParameters>({
     type: String,
     required: true,
   },
+
   values: [ParametersValueSchema],
   subParameters: [
     {
@@ -54,6 +55,10 @@ export const StructureSchema = new Schema<Structure>({
   name: {
     type: String,
     required: true,
+  },
+  active: {
+    type: Boolean,
+    default: true,
   },
   parameters: [ParametersSchema],
   outputParameters: [ParametersSchema],

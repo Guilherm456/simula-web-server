@@ -9,6 +9,12 @@ export interface Structure {
   name: string;
 
   /**
+   * Indica se a estrutura está ativa
+   * @default true
+   */
+  active: boolean;
+
+  /**
    * Parâmetros que a simulação necessita
    */
   parameters: StructureParameters[];
