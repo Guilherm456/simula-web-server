@@ -25,6 +25,7 @@ import { UsersModule } from './modules/users/users.module';
     MongooseModule.forRoot(`mongodb://${process.env.MONGO_HOST}`, {
       user: process.env.MONGO_USER,
       pass: process.env.MONGO_PASSWORD,
+      dbName: process.env.MONGO_DATABASE,
       // useUnifiedTopology: true,
       // useNewUrlParser: true,
     }),
