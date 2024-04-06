@@ -11,6 +11,16 @@ import { StructureRepository } from '../structure.repository';
 export class StructureService {
   constructor(private readonly structureRepository: StructureRepository) {}
 
+  calculateLengthParams(parameters: StructureParameters[]) {
+    let lengthParams = 0;
+
+    parameters.forEach((parameter) => {
+      lengthParams += parameter.subParameters?.length || 1;
+    });
+
+    return lengthParams;
+  }
+
   async getAll(FilterDTO?: FilterDTO) {
     return await this.structureRepository.getAllStructures(FilterDTO);
   }
@@ -20,20 +30,37 @@ export class StructureService {
   }
 
   async create(structure: StructureDTO) {
-    let lengthParams = 0;
-
-    structure.parameters.forEach((parameter) => {
-      lengthParams += parameter.subParameters?.length || 1;
-    });
-
     try {
       return await this.structureRepository.create({
         ...structure,
-        lengthParams,
+        lengthParams: this.calculateLengthParams(structure.parameters),
       } as unknown as Structure);
     } catch (err) {
       throw new HttpException(
         'Erro ao criar estrutura, verifique os dados e tente novamente. ' + err,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  async update(structureID: string, structure: StructureDTO) {
+    const oldStructure = await this.getByID(structureID);
+
+    if (!oldStructure)
+      throw new HttpException(
+        'Estrutura não encontrada',
+        HttpStatus.BAD_REQUEST,
+      );
+
+    try {
+      return await this.structureRepository.update(structureID, {
+        ...structure,
+        lengthParams: this.calculateLengthParams(structure.parameters),
+      } as unknown as Structure);
+    } catch (err) {
+      throw new HttpException(
+        'Erro ao atualizar estrutura, verifique os dados e tente novamente. ' +
+          err,
         HttpStatus.BAD_REQUEST,
       );
     }

@@ -46,4 +46,12 @@ export class StructureRepository {
   async getByID(structureID: string): Promise<Structure> {
     return await this.structures.findById(structureID).exec();
   }
+
+  async update(structureID: string, structure: Structure) {
+    return await this.structures
+      .findOneAndReplace({ _id: structureID }, structure, {
+        new: true,
+      })
+      .exec();
+  }
 }

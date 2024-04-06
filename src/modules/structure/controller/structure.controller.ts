@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseInterceptors,
 } from '@nestjs/common';
@@ -28,6 +29,15 @@ export class StructureController {
   @Roles('admin')
   async saveStructure(@Body() structure: StructureDTO) {
     return await this.structureService.create(structure);
+  }
+
+  @Put(':structureID')
+  @Roles('admin')
+  async updateStructure(
+    @Param('structureID') structureID: string,
+    @Body() structure: StructureDTO,
+  ) {
+    return await this.structureService.update(structureID, structure);
   }
 
   @Get(':structureID')
