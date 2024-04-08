@@ -51,9 +51,9 @@ export class SaidaService {
 
     outputObject.data = data;
 
-    const agentsStats = structure.agents.map((agent) => ({
+    const agentsStats = structure.agents?.map((agent) => ({
       agent,
-      stats: agent.onData(outputObject.data, agent) ?? [],
+      stats: eval(agent.onData as unknown as string)(data, agent) ?? [],
     }));
 
     for (const agent of agentsStats) {
@@ -205,7 +205,7 @@ export class SaidaService {
 
     if (!structure) throw new Error('Estrutura não encontrada');
 
-    const agentsStats = structure.agents.map((agent) => ({
+    const agentsStats = structure.agents?.map((agent) => ({
       agent,
       stats:
         output.agentsStats.find(
