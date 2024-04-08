@@ -44,7 +44,7 @@ export class StructureRepository {
   }
 
   async getByID(structureID: string): Promise<Structure> {
-    return await this.structures.findById(structureID).exec();
+    return await this.structures.findById(structureID).lean().exec();
   }
 
   async update(structureID: string, structure: Structure) {

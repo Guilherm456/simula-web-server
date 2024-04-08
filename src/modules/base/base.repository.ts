@@ -44,6 +44,7 @@ export class BaseRepository {
     const base = await this.baseModel
       .findById(baseID, { __v: false })
       .populate('type')
+      .lean()
       .exec();
     return base;
   }

@@ -80,6 +80,7 @@ export class SimulacaoRepository {
     return await this.simulacaoModel
       .findById(ID, { __v: false })
       .populate('base', { parameters: false })
+      .lean()
       .exec();
   }
 

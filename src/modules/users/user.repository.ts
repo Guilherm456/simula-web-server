@@ -10,7 +10,7 @@ export class UsersRepository {
   constructor(@InjectModel('users') private readonly userModel: Model<User>) {}
 
   async getUser(userID: string): Promise<User> {
-    return await this.userModel.findById(userID).exec();
+    return await this.userModel.findById(userID).lean().exec();
   }
 
   async createUser(user: Omit<User, 'createdAt'>): Promise<User> {
@@ -32,6 +32,8 @@ export class UsersRepository {
           active: true,
           ...filter,
         })
+        .skip(offset * limit)
+        .limit(limit)
         .exec(),
       await this.userModel.countDocuments(query).exec(),
     ]);
