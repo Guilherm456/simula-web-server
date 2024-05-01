@@ -1,63 +1,24 @@
-import {
-  Controller,
-  Delete,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  Post,
-} from '@nestjs/common';
-import { LoggerServer } from 'src/loggerServer';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
 import { SaidaService } from '../service/saida.service';
 
 @Controller('saida')
+@UseInterceptors(CacheInterceptor)
 export class SaidaController {
-  constructor(
-    private readonly saidaService: SaidaService,
-    private readonly logger: LoggerServer,
-  ) {}
+  constructor(private readonly saidaService: SaidaService) {}
 
-  @Post('parse/:simulationId')
-  async parseAndSave(@Param('simulationId') simulationId: string) {
-    const savedData = await this.saidaService.saveParsedData(simulationId);
-
-    return { message: 'Data parsed and saved successfully!', data: savedData };
+  @Get('/all/:id')
+  async getDataAllAgents(@Param('id') id: string) {
+    return await this.saidaService.getDataAllAgents(id);
   }
 
-  @Get(':simulationId')
-  async getSaidasBySimulationId(@Param('simulationId') simulationId: string) {
-    const saidaData =
-      await this.saidaService.getSaidasBySimulationId(simulationId);
-
-    if (!saidaData || saidaData.length === 0) {
-      throw new HttpException('Saida not found', HttpStatus.NOT_FOUND);
-    }
-
-    this.logger.log(`Fetched Saida for Simulation ID: ${simulationId}`);
-    return { message: 'Saida data fetched successfully!', data: saidaData };
+  @Get('/:id/:idAgent')
+  async getData(@Param('id') id: string, @Param('idAgent') idAgent: string) {
+    return await this.saidaService.getData(id, idAgent);
   }
 
-  @Get()
-  async getAllSaidas() {
-    const allSaidas = await this.saidaService.getAllSaidas();
-    this.logger.log(`Fetched all Saidas`);
-
-    return { message: 'All Saida data fetched successfully!', data: allSaidas };
-  }
-
-  @Delete(':simulationId')
-  async deleteSaidaBySimulationId(@Param('simulationId') simulationId: string) {
-    const deleted =
-      await this.saidaService.deleteSaidaBySimulationId(simulationId);
-
-    if (!deleted) {
-      throw new HttpException(
-        'Failed to delete Saida data',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    this.logger.log(`Deleted Saida for Simulation ID: ${simulationId}`);
-    return { message: 'Saida data deleted successfully!' };
+  @Get('/:id')
+  async getOutput(@Param('id') id: string) {
+    return await this.saidaService.getByID(id);
   }
 }

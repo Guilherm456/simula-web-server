@@ -49,10 +49,14 @@ services:
     networks:
       - simula
 
-  # redis:
-  #   image: redis:6.2.6-alpine3.14
-  #   networks:
-  #     - simula
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - 6379:6379
+    networks:
+      - simula
+    restart: always
 
 networks:
   simula:

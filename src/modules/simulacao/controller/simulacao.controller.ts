@@ -1,82 +1,86 @@
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import {
   Body,
   Controller,
   Delete,
   Get,
   Param,
-  Patch,
   Post,
+  Put,
+  Query,
+  Request,
+  UseInterceptors,
 } from '@nestjs/common';
+import { MiddlewareRequest } from '@types';
 
-import { FindDTO } from 'src/DTO/agentsFind.tdo';
-import { SimulacaoDTO, SimulacaoDTOEdit } from 'src/DTO/simulacao.dto';
-
-import { FilterDTO } from 'src/Mongo/Interface/query.interface';
-import { Simulacao } from 'src/Mongo/Interface/simulacao.interface';
+import { FilterDTO } from 'src/interfaces/query.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
+import { Roles } from 'src/roles';
+import { SimulacaoDTO } from '../interface';
+import { Simulacao } from '../interface/simulacao.interface';
 
 @Controller('simulacao')
+@UseInterceptors(CacheInterceptor)
 export class SimulacaoController {
   constructor(private readonly simulacaoService: SimulacaoService) {}
 
   @Get()
-  async getSimulations(query?: FilterDTO): Promise<Simulacao[]> {
+  @Roles('guest')
+  async getSimulations(@Query() query?: FilterDTO) {
     return await this.simulacaoService.getSimulatons(query);
   }
 
   @Get(':ID')
+  @Roles('guest')
   async getSimulacaoByID(@Param('ID') ID: string): Promise<Simulacao> {
-    return await this.simulacaoService.getSimulacaoByID(ID);
-  }
-
-  @Get('/status/:status')
-  async getSimulacoesByStatus(
-    @Param('status') status: string,
-  ): Promise<Simulacao[]> {
-    return await this.simulacaoService.getSimulacoesByStatus(status);
+    return await this.simulacaoService.getSimulationByID(ID);
   }
 
   @Get('/base/:baseID')
+  @Roles('guest')
   async getSimulacoesByBaseID(
     @Param('baseID') baseID: string,
   ): Promise<Simulacao[]> {
-    return await this.simulacaoService.getSimulacoesByBaseID(baseID);
-  }
-
-  @Post('/:simulacaoID/execute')
-  async executeSimulacao(@Param('simulacaoID') simulacaoID: string) {
-    return await this.simulacaoService.addExecuteSimulacao(simulacaoID);
-  }
-
-  @Post('/:simulacaoID/findAgents')
-  async findAgents(
-    @Param('simulacaoID') simulacaoID: string,
-    @Body() data: FindDTO,
-  ): Promise<number[][] | number[]> {
-    return await this.simulacaoService.findAgents(simulacaoID, data);
+    return await this.simulacaoService.getSimulationsByBaseID(baseID);
   }
 
   @Post('/:baseID')
+  @Roles('user')
   async saveSimulacao(
     @Body() simulacao: SimulacaoDTO,
     @Param('baseID') baseID: string,
+    @Request() req: MiddlewareRequest,
   ): Promise<Simulacao> {
-    return await this.simulacaoService.saveSimulacao(simulacao, baseID);
+    return await this.simulacaoService.saveSimulation(
+      simulacao,
+      baseID,
+      req.user.id,
+    );
   }
 
-  @Patch(':simulacaoID')
+  @Put(':simulacaoID')
+  @Roles('user')
   async updateSimulacao(
     @Param('simulacaoID') simulacaoID: string,
-    @Body() newSimulacao: SimulacaoDTOEdit,
+    @Body() newSimulacao: SimulacaoDTO,
+    @Request() req: MiddlewareRequest,
   ): Promise<Simulacao> {
-    return await this.simulacaoService.updateSimulacao(
+    return await this.simulacaoService.updateSimulations(
       simulacaoID,
       newSimulacao,
+      req.user.id,
     );
   }
 
   @Delete(':simulacaoID')
-  async deleteSimulacao(@Param('simulacaoID') simulacaoID: string) {
-    return await this.simulacaoService.deleteSimulacao(simulacaoID);
+  @Roles('user')
+  async deleteSimulacao(
+    @Param('simulacaoID') simulacaoID: string,
+    @Request() req: MiddlewareRequest,
+  ) {
+    return await this.simulacaoService.deleteSimulations(
+      simulacaoID,
+      req.user.id,
+    );
   }
 }
