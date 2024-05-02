@@ -11,7 +11,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { AtLeastOneButNotBoth } from 'src/DTO/customValidators';
+import { AtLeastOneButNotBoth } from 'src/utils/customValidators';
 import { AgentsStructureDTO } from './agents.dto';
 
 class ValuesDTO {
