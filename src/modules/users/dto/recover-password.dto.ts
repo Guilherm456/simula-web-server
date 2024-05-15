@@ -1,16 +1,16 @@
 import { IsEmail, IsString, MinLength } from 'class-validator';
 
 export class RecoverPasswordDto {
-  @IsString()
-  @MinLength(8)
+  @IsString({ message: 'Nova senha é obrigatória' })
+  @MinLength(8, { message: 'Nova senha deve ter no mínimo 8 caracteres' })
   newPassword: string;
 
-  @IsString()
+  @IsString({ message: 'Token é obrigatório' })
   token: string;
 }
 
 export class RecoverPasswordEmailDto {
-  @IsString()
-  @IsEmail()
+  @IsString({ message: 'Email é obrigatório' })
+  @IsEmail(undefined, { message: 'Email inválido' })
   email: string;
 }

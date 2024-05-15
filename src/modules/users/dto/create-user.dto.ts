@@ -1,16 +1,16 @@
 import { IsEmail, IsIn, IsString } from 'class-validator';
 
 export class CreateUserDto {
-  @IsString()
+  @IsString({ message: 'Nome é obrigatório' })
   name: string;
 
-  @IsEmail()
+  @IsEmail(undefined, { message: 'Email deve ser válido' })
   email: string;
 
-  @IsString()
+  @IsString({ message: 'Senha é obrigatória' })
   password: string;
 
-  @IsString()
-  @IsIn(['admin', 'user', 'guest'])
+  @IsString({ message: 'Um papel é obrigatório' })
+  @IsIn(['admin', 'user', 'guest'], { message: 'Papel inválido' })
   role: string;
 }

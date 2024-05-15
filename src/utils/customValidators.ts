@@ -26,9 +26,9 @@ export class AtLeastOneButNotBothConstraint
   defaultMessage(args: ValidationArguments) {
     const [relatedPropertyNames] = args.constraints;
 
-    return `Either one of ${relatedPropertyNames.join(
+    return `Qualquer um dos ${relatedPropertyNames.join(
       ', ',
-    )} is required, but not both.`;
+    )} deve ser preenchido, mas não ambos`;
   }
 }
 

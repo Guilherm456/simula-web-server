@@ -15,106 +15,118 @@ import { AtLeastOneButNotBoth } from 'src/utils/customValidators';
 import { AgentsStructureDTO } from './agents.dto';
 
 class ValuesDTO {
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Nome do valor deve ser uma string' })
+  @IsNotEmpty({ message: 'Nome do valor é obrigatório' })
   name: string;
 
-  @IsIn(['string', 'number', 'mixed'])
-  @IsNotEmpty()
+  @IsIn(['string', 'number', 'mixed'], { message: 'Tipo de valor inválido' })
+  @IsNotEmpty({ message: 'Tipo de valor é obrigatório' })
   type: 'string' | 'number' | 'mixed';
 }
 
 class ParametersDTO {
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Nome do parâmetro deve ser uma string' })
+  @IsNotEmpty({ message: 'Nome do parâmetro é obrigatório' })
   name: string;
 
-  @IsArray()
-  @ArrayMinSize(1)
+  @IsArray({ message: 'Valores do parâmetro devem ser um array' })
+  @ArrayMinSize(1, {
+    message: 'Valores do parâmetro devem ter no mínimo 1 item',
+  })
   @ValidateNested({ each: true })
   @ArrayUnique((value: ValuesDTO) => value.name, {
-    message: 'Name must be unique',
+    message: 'Nome do valor deve ser único',
   })
   @Type(() => ValuesDTO)
   values: ValuesDTO[];
 }
 
 class ParametersDTOFirst {
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Nome do parâmetro deve ser uma string' })
+  @IsNotEmpty({ message: 'Nome do parâmetro é obrigatório' })
   name: string;
 
-  @IsArray()
+  @IsArray({ message: 'Valores do parâmetro devem ser um array' })
   @IsOptional()
-  @ArrayMinSize(1)
+  @ArrayMinSize(1, {
+    message: 'Valores do parâmetro devem ter no mínimo 1 item',
+  })
   @ValidateNested({ each: true })
   @ArrayUnique((value: ValuesDTO) => value.name, {
-    message: 'Name must be unique',
+    message: 'Nome do valor deve ser único',
   })
   @Type(() => ValuesDTO)
   values: ValuesDTO[];
 
-  @IsArray()
+  @IsArray({ message: 'Subparâmetros do parâmetro devem ser um array' })
   @IsOptional()
-  @ArrayMinSize(1)
+  @ArrayMinSize(1, {
+    message: 'Subparâmetros do parâmetro devem ter no mínimo 1 item',
+  })
   @ValidateNested({ each: true })
   @ArrayUnique((parameter: ParametersDTO) => parameter.name, {
-    message: 'Name must be unique',
+    message: 'Nome do parâmetro deve ser único',
   })
   @Type(() => ParametersDTO)
   subParameters: ParametersDTO[];
 }
 
 export class StructureDTO {
-  @IsString()
-  @MinLength(4)
+  @IsString({ message: 'Nome da estrutura é obrigatório' })
+  @MinLength(4, {
+    message: 'Nome da estrutura deve ter no mínimo 4 caracteres',
+  })
   name: string;
 
-  @IsArray()
-  @ArrayMinSize(1)
+  @IsArray({ message: 'Parâmetros da estrutura devem ser um array' })
+  @ArrayMinSize(1, {
+    message: 'Parâmetros da estrutura devem ter no mínimo 1 item',
+  })
   @ValidateNested({ each: true })
   @ArrayUnique((parameter: ParametersDTO) => parameter.name, {
-    message: 'Name must be unique',
+    message: 'Nome do parâmetro deve ser único',
   })
   @Type(() => ParametersDTOFirst)
   @AtLeastOneButNotBoth(['values', 'subParameters'])
   parameters: ParametersDTOFirst[];
 
-  @IsArray()
-  @ArrayMinSize(1)
+  @IsArray({ message: 'Parâmetros de saída da estrutura devem ser um array' })
+  @ArrayMinSize(1, {
+    message: 'Parâmetros de saída da estrutura devem ter no mínimo 1 item',
+  })
   @ValidateNested({ each: true })
   @ArrayUnique((parameter: ParametersDTO) => parameter.name, {
-    message: 'Name must be unique',
+    message: 'Nome do parâmetro de saída deve ser único',
   })
   @Type(() => ParametersDTOFirst)
   @AtLeastOneButNotBoth(['values', 'subParameters'])
   outputParameters: ParametersDTOFirst[];
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Pasta de entrada é obrigatória' })
+  @IsNotEmpty({ message: 'Pasta de entrada é obrigatória' })
   inputsFolder: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Pasta de saída é obrigatória' })
+  @IsNotEmpty({ message: 'Pasta de saída é obrigatória' })
   folder: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Pasta de resultados é obrigatória' })
+  @IsNotEmpty({ message: 'Pasta de resultados é obrigatória' })
   resultsFolder: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Comando de execução é obrigatório' })
+  @IsNotEmpty({ message: 'Comando de execução é obrigatório' })
   executeCommand: string;
 
-  @IsArray()
-  @IsNotEmpty()
+  @IsArray({ message: 'Agentes da estrutura devem ser um array' })
+  @IsNotEmpty({ message: 'Agentes da estrutura são obrigatórios' })
   @IsObject({ each: true })
   @ValidateNested({ each: true })
   @ArrayUnique((agent: AgentsStructureDTO) => agent.label, {
-    message: 'Label must be unique',
+    message: 'Rótulo de cada agente deve ser único',
   })
   @ArrayUnique((agent: AgentsStructureDTO) => agent.color, {
-    message: 'Color must be unique',
+    message: 'Cor de cada agente deve ser única',
   })
   @Type(() => AgentsStructureDTO)
   agents: AgentsStructureDTO[];
