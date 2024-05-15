@@ -10,7 +10,13 @@ import { existsSync, openSync, readFileSync, watchFile } from 'fs';
 import { Server, Socket } from 'socket.io';
 import { LoggerServer } from 'src/loggerServer';
 
-@WebSocketGateway({ cors: '*', path: '/log' })
+@WebSocketGateway({
+  path: '/log',
+  transports: ['websocket'],
+  cors: {
+    origin: process.env.CORS_ORIGIN,
+  },
+})
 @Injectable()
 export class AppGateway implements OnGatewayInit {
   private file: string;

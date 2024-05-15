@@ -24,11 +24,11 @@ import { UsersService } from './users.service';
     MongooseModule.forFeature([{ name: 'users', schema: UserSchema }]),
     MailerModule.forRoot({
       transport: {
-        host: 'smtp.ethereal.email',
-        port: 587,
+        host: `${process.env.EMAIL_HOST}`,
+        port: +process.env.EMAIL_PORT,
         auth: {
-          user: 'norberto9@ethereal.email',
-          pass: 'mEbKuGBe4t1wBSzzqn',
+          user: `${process.env.EMAIL_USERNAME}`,
+          pass: `${process.env.EMAIL_PASSWORD}`,
         },
       },
     }),
