@@ -36,6 +36,13 @@ export class StructureService {
         lengthParams: this.calculateLengthParams(structure.parameters),
       } as unknown as Structure);
     } catch (err) {
+      if (err.code === 11000) {
+        throw new HttpException(
+          'Alguma pasta definida dentro da estrutura já está sendo utilizada, verifique e tente novamente.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       throw new HttpException(
         'Erro ao criar estrutura, verifique os dados e tente novamente. ' + err,
         HttpStatus.BAD_REQUEST,
