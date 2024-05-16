@@ -26,10 +26,11 @@ import { UsersService } from './users.service';
       transport: {
         host: `${process.env.EMAIL_HOST}`,
         port: +process.env.EMAIL_PORT,
-        auth: {
-          user: `${process.env.EMAIL_USERNAME}`,
-          pass: `${process.env.EMAIL_PASSWORD}`,
-        },
+        auth: !!process.env.EMAIL_USERNAME &&
+          !!process.env.EMAIL_PASSWORD && {
+            user: `${process.env.EMAIL_USERNAME}`,
+            pass: `${process.env.EMAIL_PASSWORD}`,
+          },
       },
     }),
     BullModule.registerQueue({

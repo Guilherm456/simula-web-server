@@ -104,8 +104,7 @@ export class UsersService {
     try {
       await this.mailerService.sendMail({
         to: user.email,
-        from: 'simulaweb@noreply.com',
-
+        from: `${process.env.EMAIL_FROM}`,
         subject: 'Recuperação de senha (não responder)',
         text: `Olá ${user.name}, você solicitou a recuperação de senha, para continuar clique no link abaixo: \n\n ${process.env.CORS_ORIGIN}/recuperar-senha/${newToken} \n\n Caso não tenha sido você, ignore este email.`,
       });
