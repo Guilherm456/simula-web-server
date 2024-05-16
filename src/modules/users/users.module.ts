@@ -22,16 +22,18 @@ import { UsersService } from './users.service';
   ],
   imports: [
     MongooseModule.forFeature([{ name: 'users', schema: UserSchema }]),
-    MailerModule.forRoot({
-      transport: {
-        host: `${process.env.EMAIL_HOST}`,
-        port: +process.env.EMAIL_PORT,
-        auth: !!process.env.EMAIL_USERNAME &&
-          !!process.env.EMAIL_PASSWORD && {
-            user: `${process.env.EMAIL_USERNAME}`,
-            pass: `${process.env.EMAIL_PASSWORD}`,
-          },
-      },
+    MailerModule.forRootAsync({
+      useFactory: () => ({
+        transport: {
+          host: `${process.env.EMAIL_HOST}`,
+          port: +process.env.EMAIL_PORT,
+          auth: process.env.EMAIL_USERNAME &&
+            process.env.EMAIL_PASSWORD && {
+              user: `${process.env.EMAIL_USERNAME}`,
+              password: `${process.env.EMAIL_PASSWORD}`,
+            },
+        },
+      }),
     }),
     BullModule.registerQueue({
       name: 'email',
