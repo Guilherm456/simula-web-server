@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { MiddlewareRequest } from '@types';
 
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { FilterDTO } from 'src/interfaces/query.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 import { Roles } from 'src/roles';
@@ -21,6 +22,8 @@ import { Simulacao } from '../interface/simulacao.interface';
 
 @Controller('simulacao')
 @UseInterceptors(CacheInterceptor)
+@ApiTags('Simulação')
+@ApiSecurity('access-token')
 export class SimulacaoController {
   constructor(private readonly simulacaoService: SimulacaoService) {}
 

@@ -9,6 +9,7 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { FilterDTO } from '@types';
 import { Roles } from 'src/roles';
 import { StructureDTO } from '../entities/DTO/structure.dto';
@@ -16,6 +17,8 @@ import { StructureService } from '../service/structure.service';
 
 @Controller('structure')
 @UseInterceptors(CacheInterceptor)
+@ApiTags('Estruturas')
+@ApiSecurity('access-token')
 export class StructureController {
   constructor(private readonly structureService: StructureService) {}
 

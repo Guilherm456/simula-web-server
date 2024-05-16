@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as compression from 'compression';
 import { AppModule } from './app.module';
 import { LoggerServer } from './loggerServer';
@@ -12,6 +13,18 @@ async function bootstrap() {
       origin: `${process.env.CORS_ORIGIN}`,
     },
   });
+
+  const config = new DocumentBuilder()
+    .setTitle('SIMULA API')
+    .setDescription('API para o gerenciamento de simulações de doenças')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'access-token',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('swagger', app, document);
 
   app.useGlobalPipes(
     new ValidationPipe({

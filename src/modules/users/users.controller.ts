@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { FilterDTO, MiddlewareRequest } from '@types';
 import { Public, Roles } from 'src/roles';
 import { LocalStrategy } from '../../middleware/auth.guard';
@@ -21,23 +22,27 @@ import {
 import { UsersService } from './users.service';
 
 @Controller('users')
+@ApiTags('Usuários')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
   @Roles('admin')
+  @ApiSecurity('access-token')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.createUser(createUserDto);
   }
 
   @Get()
   @Roles('admin')
+  @ApiSecurity('access-token')
   findAll(@Query() filter: FilterDTO) {
     return this.usersService.getUsers(filter);
   }
 
   @Delete(':id')
   @Roles('admin')
+  @ApiSecurity('access-token')
   remove(@Param('id') id: string) {
     return this.usersService.deleteUser(id);
   }
@@ -66,6 +71,7 @@ export class UsersController {
 
   @Get('/user')
   @Roles('guest')
+  @ApiSecurity('access-token')
   async getUser(@Req() req: MiddlewareRequest) {
     return await this.usersService.getUser(req.user.id);
   }

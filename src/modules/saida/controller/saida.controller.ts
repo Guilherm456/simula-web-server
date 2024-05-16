@@ -1,9 +1,12 @@
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { Controller, Get, Param, UseInterceptors } from '@nestjs/common';
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { SaidaService } from '../service/saida.service';
 
 @Controller('saida')
 @UseInterceptors(CacheInterceptor)
+@ApiTags('Saída das simulações')
+@ApiSecurity('access-token')
 export class SaidaController {
   constructor(private readonly saidaService: SaidaService) {}
 

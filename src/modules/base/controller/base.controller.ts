@@ -18,6 +18,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { BaseService } from 'src/modules/base/service/base.service';
 
 import { CacheInterceptor } from '@nestjs/cache-manager';
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { MiddlewareRequest } from '@types';
 import { FilterDTO } from 'src/interfaces/query.interface';
 import { Roles } from 'src/roles';
@@ -26,6 +27,8 @@ import { Base } from '../interfaces/base.interface';
 
 @Controller('base')
 @UseInterceptors(CacheInterceptor)
+@ApiTags('Base')
+@ApiSecurity('access-token')
 export class BaseController {
   constructor(private readonly baseService: BaseService) {}
 
