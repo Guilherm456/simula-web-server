@@ -10,8 +10,11 @@ import { Server, Socket } from 'socket.io';
 import { PayloadParameters } from './interfaces/parameters';
 
 @WebSocketGateway({
-  cors: `${process.env.CORS_ORIGIN}`,
   path: '/edit-parameters',
+  transports: ['websocket'],
+  cors: {
+    origin: `${process.env.CORS_ORIGIN}`,
+  },
 })
 @Injectable()
 export class ParametersSocket {

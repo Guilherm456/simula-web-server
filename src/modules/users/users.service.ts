@@ -1,6 +1,11 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  OnModuleInit,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { FilterDTO } from '@types';
 import * as brycpt from 'bcrypt';
@@ -14,7 +19,7 @@ import { UsersRepository } from './user.repository';
 
 @Processor('email')
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   private tokens = new Map<
     string,
     {
@@ -29,6 +34,25 @@ export class UsersService {
     private logger: LoggerServer,
     @InjectQueue('email') private readonly emailQueue: Queue<User>,
   ) {}
+
+  // Gera um usuário admin caso não exista
+  async onModuleInit() {
+    const users = await this.userRepository.getUsers();
+
+    if (!users.totalElements) {
+      const randomPassword = randomUUID();
+      await this.createUser({
+        name: 'Admin',
+        email: 'admin@simula.com',
+        role: 'admin',
+        password: randomPassword,
+      });
+
+      this.logger.log(
+        `Usuário admin criado com a senha ${randomPassword} e email 'admin@simula.com'`,
+      );
+    }
+  }
 
   async getUser(id: string) {
     const user = await this.userRepository.getUser(id);
