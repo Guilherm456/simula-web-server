@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { LoggerServer } from 'src/loggerServer';
 
-import { BaseDTO } from '../interfaces/base.dto';
+import { BaseCreateDTO } from '../interfaces/base.dto';
 
 import { parse } from 'papaparse';
 import { FilterDTO } from 'src/interfaces/query.interface';
@@ -131,7 +131,7 @@ export class BaseService {
   }
 
   async saveBase(
-    base: BaseDTO,
+    base: BaseCreateDTO,
     structureID: string,
     userID: string,
   ): Promise<Base> {
@@ -167,7 +167,7 @@ export class BaseService {
 
   async updateBase(
     baseID: string,
-    newBase: BaseDTO,
+    newBase: BaseCreateDTO,
     userID: string,
   ): Promise<Base> {
     const base = await this.baseRepository.getBaseByID(baseID);

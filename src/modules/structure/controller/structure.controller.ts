@@ -12,7 +12,7 @@ import {
 import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { FilterDTO } from '@types';
 import { Roles } from 'src/roles';
-import { StructureDTO } from '../entities/DTO/structure.dto';
+import { StructureCreateDTO } from '../entities/DTO/structure.dto';
 import { StructureService } from '../service/structure.service';
 
 @Controller('structure')
@@ -30,7 +30,7 @@ export class StructureController {
 
   @Post()
   @Roles('admin')
-  async saveStructure(@Body() structure: StructureDTO) {
+  async saveStructure(@Body() structure: StructureCreateDTO) {
     return await this.structureService.create(structure);
   }
 
@@ -38,7 +38,7 @@ export class StructureController {
   @Roles('admin')
   async updateStructure(
     @Param('structureID') structureID: string,
-    @Body() structure: StructureDTO,
+    @Body() structure: StructureCreateDTO,
   ) {
     return await this.structureService.update(structureID, structure);
   }

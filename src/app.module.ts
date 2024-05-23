@@ -36,7 +36,6 @@ import { UsersModule } from './modules/users/users.module';
     CacheModule.register({
       isGlobal: true,
       max: 1000,
-      ttl: 60 * 1000,
     }),
     SaidaModule,
     ParametersModule,

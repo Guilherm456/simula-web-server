@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, Length } from 'class-validator';
 
-export class SimulacaoDTO {
+export class SimulacaoCreateDTO {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @IsString({ message: 'Nome deve ser uma string' })
   @Length(4, 50, { message: 'Nome deve ter entre 4 e 50 caracteres' })
@@ -10,6 +10,7 @@ export class SimulacaoDTO {
     required: true,
     maxLength: 50,
     minLength: 4,
+    example: 'Simulação 1',
   })
   name: string;
 }

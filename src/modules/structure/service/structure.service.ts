@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { FilterDTO } from 'src/interfaces';
-import { StructureDTO } from '../entities/DTO/structure.dto';
+import { StructureCreateDTO } from '../entities/DTO/structure.dto';
 import {
   Structure,
   StructureParameters,
@@ -29,7 +29,7 @@ export class StructureService {
     return await this.structureRepository.getByID(structureID);
   }
 
-  async create(structure: StructureDTO) {
+  async create(structure: StructureCreateDTO) {
     try {
       return await this.structureRepository.create({
         ...structure,
@@ -50,7 +50,7 @@ export class StructureService {
     }
   }
 
-  async update(structureID: string, structure: StructureDTO) {
+  async update(structureID: string, structure: StructureCreateDTO) {
     const oldStructure = await this.getByID(structureID);
 
     if (!oldStructure)

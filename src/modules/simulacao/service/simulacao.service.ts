@@ -4,7 +4,7 @@ import { FilterDTO } from 'src/interfaces/query.interface';
 import { LoggerServer } from 'src/loggerServer';
 import { BaseService } from 'src/modules/base/service/base.service';
 import { ParametersService } from 'src/modules/parameters/services/parameters.service';
-import { SimulacaoDTO } from '../interface';
+import { SimulacaoCreateDTO } from '../interface';
 import { Simulacao } from '../interface/simulacao.interface';
 import { SimulacaoRepository } from '../simulacao.repository';
 
@@ -35,7 +35,7 @@ export class SimulacaoService {
 
   //Salva uma simulação
   async saveSimulation(
-    simulacao: SimulacaoDTO,
+    simulacao: SimulacaoCreateDTO,
     baseID: string,
     userID: string,
   ): Promise<Simulacao> {
@@ -84,7 +84,7 @@ export class SimulacaoService {
   //Atualiza uma simulação
   async updateSimulations(
     simulacaoID: string,
-    newSimulacao: SimulacaoDTO,
+    newSimulacao: SimulacaoCreateDTO,
     userID: string,
   ): Promise<Simulacao> {
     const simulacaoOld =

@@ -22,7 +22,7 @@ import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { MiddlewareRequest } from '@types';
 import { FilterDTO } from 'src/interfaces/query.interface';
 import { Roles } from 'src/roles';
-import { BaseDTO } from '../interfaces/base.dto';
+import { BaseCreateDTO } from '../interfaces/base.dto';
 import { Base } from '../interfaces/base.interface';
 
 @Controller('base')
@@ -49,7 +49,7 @@ export class BaseController {
   @Post('/:structureID')
   @Roles('user')
   async saveBase(
-    @Body() base: BaseDTO,
+    @Body() base: BaseCreateDTO,
     @Param('structureID') structureID: string,
     @Req() req: MiddlewareRequest,
   ): Promise<Base> {
@@ -98,7 +98,7 @@ export class BaseController {
   @Roles('user')
   async updateBase(
     @Param('baseID') baseID: string,
-    @Body() base: BaseDTO,
+    @Body() base: BaseCreateDTO,
     @Req() req: MiddlewareRequest,
   ): Promise<Base> {
     return await this.baseService.updateBase(baseID, base, req.user.id);

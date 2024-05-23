@@ -35,7 +35,12 @@ export class UsersRepository {
         .skip(offset * limit)
         .limit(limit)
         .exec(),
-      await this.userModel.countDocuments(query).exec(),
+      await this.userModel
+        .countDocuments({
+          active: true,
+          ...filter,
+        })
+        .exec(),
     ]);
 
     const totalPages = Math.ceil(totalElements / limit);

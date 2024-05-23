@@ -102,7 +102,7 @@ class ParametersDTOFirst {
   subParameters: ParametersDTO[];
 }
 
-export class StructureDTO {
+export class StructureCreateDTO {
   @IsString({ message: 'Nome da estrutura é obrigatório' })
   @Length(4, 50, {
     message: 'Nome da estrutura deve ter entre 4 e 50 caracteres',

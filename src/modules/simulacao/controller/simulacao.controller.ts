@@ -17,7 +17,7 @@ import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { FilterDTO } from 'src/interfaces/query.interface';
 import { SimulacaoService } from 'src/modules/simulacao/service/simulacao.service';
 import { Roles } from 'src/roles';
-import { SimulacaoDTO } from '../interface';
+import { SimulacaoCreateDTO } from '../interface';
 import { Simulacao } from '../interface/simulacao.interface';
 
 @Controller('simulacao')
@@ -50,7 +50,7 @@ export class SimulacaoController {
   @Post('/:baseID')
   @Roles('user')
   async saveSimulacao(
-    @Body() simulacao: SimulacaoDTO,
+    @Body() simulacao: SimulacaoCreateDTO,
     @Param('baseID') baseID: string,
     @Request() req: MiddlewareRequest,
   ): Promise<Simulacao> {
@@ -65,7 +65,7 @@ export class SimulacaoController {
   @Roles('user')
   async updateSimulacao(
     @Param('simulacaoID') simulacaoID: string,
-    @Body() newSimulacao: SimulacaoDTO,
+    @Body() newSimulacao: SimulacaoCreateDTO,
     @Request() req: MiddlewareRequest,
   ): Promise<Simulacao> {
     return await this.simulacaoService.updateSimulations(

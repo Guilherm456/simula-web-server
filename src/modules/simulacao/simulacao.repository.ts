@@ -63,7 +63,12 @@ export class SimulacaoRepository {
         .limit(limit)
         .sort({ name: +1 })
         .exec(),
-      this.simulacaoModel.countDocuments(query).exec(),
+      this.simulacaoModel
+        .countDocuments({
+          active: true,
+          ...filter,
+        })
+        .exec(),
     ]);
 
     const totalPages = Math.ceil(totalElements / limit);

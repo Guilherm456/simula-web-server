@@ -29,7 +29,12 @@ export class StructureRepository {
         .skip(offset * limit)
         .limit(limit)
         .exec(),
-      this.structures.countDocuments(query).exec(),
+      this.structures
+        .countDocuments({
+          active: true,
+          ...filter,
+        })
+        .exec(),
     ]);
 
     const totalPages = Math.ceil(totalElements / limit);

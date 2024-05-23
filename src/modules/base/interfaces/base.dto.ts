@@ -7,7 +7,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
-export class BaseDTO {
+export class BaseCreateDTO {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @IsString({ message: 'Nome deve ser uma string' })
   @Length(3, 50, { message: 'Nome deve ter entre 3 e 50 caracteres' })
@@ -16,6 +16,7 @@ export class BaseDTO {
     required: true,
     maxLength: 50,
     minLength: 3,
+    example: 'Base 1',
   })
   name: string;
 

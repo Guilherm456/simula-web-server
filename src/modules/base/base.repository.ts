@@ -27,7 +27,12 @@ export class BaseRepository {
         .limit(limit)
         .sort({ name: +1 })
         .exec(),
-      this.baseModel.countDocuments(query).exec(),
+      this.baseModel
+        .countDocuments({
+          active: true,
+          ...filter,
+        })
+        .exec(),
     ]);
 
     const totalPages = Math.ceil(totalElements / limit);
