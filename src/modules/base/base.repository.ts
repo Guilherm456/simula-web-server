@@ -19,7 +19,6 @@ export class BaseRepository {
       this.baseModel
         .find({
           active: true,
-          __v: false,
           ...filter,
         })
         .populate('type', 'name _id')
@@ -47,7 +46,7 @@ export class BaseRepository {
 
   async getBaseByID(baseID: string): Promise<Base> {
     const base = await this.baseModel
-      .findById(baseID, { __v: false })
+      .findById(baseID, {})
       .populate('type')
       .lean()
       .exec();

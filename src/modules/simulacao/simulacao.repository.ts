@@ -58,7 +58,7 @@ export class SimulacaoRepository {
     const filter = buildFilter(query);
     const [content, totalElements] = await Promise.all([
       this.simulacaoModel
-        .find({ __v: false, ...filter })
+        .find({ active: true, ...filter })
         .skip(offset * limit)
         .limit(limit)
         .sort({ name: +1 })
@@ -83,16 +83,14 @@ export class SimulacaoRepository {
 
   async getSimulationsByID(ID: string): Promise<Simulacao> {
     return await this.simulacaoModel
-      .findById(ID, { __v: false })
+      .findById(ID, {})
       .populate('base', { parameters: false })
       .lean()
       .exec();
   }
 
   async getSimulationsByBaseID(baseID: string): Promise<Simulacao[]> {
-    return await this.simulacaoModel
-      .find({ 'base._id': baseID }, { __v: false })
-      .exec();
+    return await this.simulacaoModel.find({ 'base._id': baseID }, {}).exec();
   }
 
   async updateSimulations(

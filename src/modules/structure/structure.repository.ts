@@ -22,10 +22,9 @@ export class StructureRepository {
     const [content, totalElements] = await Promise.all([
       this.structures
         .find({
-          __v: false,
+          active: true,
           ...filter,
         })
-        // .select('-parameters')
         .skip(offset * limit)
         .limit(limit)
         .exec(),

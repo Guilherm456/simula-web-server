@@ -28,7 +28,6 @@ export class UsersRepository {
     const [content, totalElements] = await Promise.all([
       await this.userModel
         .find({
-          __v: false,
           active: true,
           ...filter,
         })
