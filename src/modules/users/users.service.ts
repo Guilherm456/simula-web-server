@@ -48,7 +48,7 @@ export class UsersService implements OnModuleInit {
         password: randomPassword,
       });
 
-      this.logger.log(
+      console.log(
         `Usuário admin criado com a senha ${randomPassword} e email 'admin@simula.com'`,
       );
     }
